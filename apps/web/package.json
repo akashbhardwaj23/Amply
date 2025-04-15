@@ -11,10 +11,13 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.0.1",
     "@repo/ui": "workspace:*",
+    "lucide-react": "^0.488.0",
     "next": "^15.3.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-hook-form": "^7.55.0"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
