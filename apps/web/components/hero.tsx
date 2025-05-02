@@ -1,24 +1,24 @@
-"use client"
+'use client';
 
-import type React from "react"
+import type React from 'react';
 
-import { useState } from "react"
-import Link from "next/link"
-import { Button } from "@repo/ui/components/ui/button"
-import { Input } from "@repo/ui/components/ui/input"
-import { Search, MapPin } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useState } from 'react';
+import Link from 'next/link';
+import { Button } from '@repo/ui/components/ui/button';
+import { Input } from '@repo/ui/components/ui/input';
+import { Search, MapPin } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export function HeroSection() {
-  const [location, setLocation] = useState("")
-  const router = useRouter()
+  const [location, setLocation] = useState('');
+  const router = useRouter();
 
   const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (location.trim()) {
-      router.push(`/map?location=${encodeURIComponent(location)}`)
+      router.push(`/map?location=${encodeURIComponent(location)}`);
     }
-  }
+  };
 
   return (
     <div className="relative">
@@ -32,10 +32,14 @@ export function HeroSection() {
             Find EV Charging Stations on the Solana Blockchain
           </h1>
           <p className="text-xl md:text-2xl mb-8 text-white/90">
-            Discover nearby charging stations, get AI-optimized pricing, and earn tokens with every charge
+            Discover nearby charging stations, get AI-optimized pricing, and
+            earn tokens with every charge
           </p>
 
-          <form onSubmit={handleSearch} className="flex w-full max-w-lg mx-auto mb-8 gap-2">
+          <form
+            onSubmit={handleSearch}
+            className="flex w-full max-w-lg mx-auto mb-8 gap-2"
+          >
             <div className="relative flex-1">
               <MapPin className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-white/70" />
               <Input
@@ -46,22 +50,34 @@ export function HeroSection() {
                 onChange={(e) => setLocation(e.target.value)}
               />
             </div>
-            <Button type="submit" className="bg-white text-rose-600 hover:bg-white/90">
+            <Button
+              type="submit"
+              className="bg-white text-rose-600 hover:bg-white/90"
+            >
               <Search className="mr-2 h-4 w-4" />
               Search
             </Button>
           </form>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button asChild size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="border-white text-white hover:bg-white/10"
+            >
               <Link href="/map">Find Stations</Link>
             </Button>
-            <Button asChild size="lg" className="bg-white text-rose-600 hover:bg-white/90">
+            <Button
+              asChild
+              size="lg"
+              className="bg-white text-rose-600 hover:bg-white/90"
+            >
               <Link href="/register-station">Register Your Charger</Link>
             </Button>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
