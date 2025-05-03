@@ -1,8 +1,8 @@
 import Link from "next/link"
-import { Button } from "@repo/ui/components/ui/button"
+import { Button } from "@/components/ui/button"
 import { ChevronRight, Zap, MapPin, Shield, Coins } from "lucide-react"
-import { HeroSection } from "@/components/hero"
-import { FeatureCard } from "@/components/featurecard"
+import { HeroSection } from "@/components/hero-section"
+import { FeatureCard } from "@/components/feature-card"
 
 export default function Home() {
   return (

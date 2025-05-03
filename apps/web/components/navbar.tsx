@@ -2,8 +2,8 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { cn } from "@repo/ui/utils.ts"
-import { Button } from "@repo/ui/components/ui/button"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -12,19 +12,19 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
-} from "@repo/ui/components/ui/navigation-menu"
-import { ModeToggle } from "@/components/modetoggle"
+} from "@/components/ui/navigation-menu"
+import { ModeToggle } from "@/components/mode-toggle"
 import { Mic } from "lucide-react"
 import { useState } from "react"
-import { VoiceCommandDialog } from "@/components/voicecommand"
-import { Avatar, AvatarFallback } from "@repo/ui/components/ui/avatar"
+import { VoiceCommandDialog } from "@/components/voice-command-dialog"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@repo/ui/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu"
 
 export default function Navbar() {
   const [isSignedIn, setIsSignedIn] = useState(false)

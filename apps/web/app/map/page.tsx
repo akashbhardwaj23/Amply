@@ -4,14 +4,14 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/ui/card"
-import { Button } from "@repo/ui/components/ui/button"
-import { Input } from "@repo/ui/components/ui/input"
-import { Slider } from "@repo/ui/components/ui/slider"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/components/ui/tabs"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Slider } from "@/components/ui/slider"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MapPin, Filter, Search } from "lucide-react"
-import { StationCard } from "@/components/stationcard"
-import { MapComponent } from "@/components/map"
+import { StationCard } from "@/components/station-card"
+import { MapComponent } from "@/components/map-component"
 
 // Mock data for stations
 const mockStations = [
@@ -78,8 +78,8 @@ export default function MapPage() {
   useEffect(() => {
     const filtered = stations.filter((station) => {
       if (availableOnly && !station.available) return false
-      if (station.price < priceRange[0]! / 100 || station.price > priceRange[1]! / 100) return false
-      if (station.power < powerRange[0]! || station.power > powerRange[1]!) return false
+      if (station.price < priceRange[0] / 100 || station.price > priceRange[1] / 100) return false
+      if (station.power < powerRange[0] || station.power > powerRange[1]) return false
       return true
     })
     setFilteredStations(filtered)
@@ -135,8 +135,8 @@ export default function MapPage() {
                 <label className="text-sm font-medium">Price (SOL per kWh)</label>
                 <Slider defaultValue={[0, 50]} max={50} step={1} value={priceRange} onValueChange={setPriceRange} />
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{(priceRange[0]! / 100).toFixed(2)} SOL</span>
-                  <span>{(priceRange[1]! / 100).toFixed(2)} SOL</span>
+                  <span>{(priceRange[0] / 100).toFixed(2)} SOL</span>
+                  <span>{(priceRange[1] / 100).toFixed(2)} SOL</span>
                 </div>
               </div>
 
