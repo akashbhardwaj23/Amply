@@ -25,6 +25,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {motion} from "motion/react"
 
 export default function Navbar() {
   const [isSignedIn, setIsSignedIn] = useState(false)
@@ -40,7 +41,11 @@ export default function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <motion.header
+    initial={{opacity : 0, scaleX : .98}}
+    animate={{opacity:1, scaleX:1}}
+    transition={{type:"spring", damping:10, stiffness:100}}
+    className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center space-x-2">
@@ -140,6 +145,6 @@ export default function Navbar() {
         </div>
       </div>
       <VoiceCommandDialog open={voiceCommandOpen} onOpenChange={setVoiceCommandOpen} />
-    </header>
+    </motion.header>
   )
 }

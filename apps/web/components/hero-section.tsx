@@ -1,13 +1,13 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, MapPin } from "lucide-react"
 import { useRouter } from "next/navigation"
+import {motion} from "motion/react"
 
 export function HeroSection() {
   const [location, setLocation] = useState("")
@@ -21,9 +21,11 @@ export function HeroSection() {
   }
 
   return (
-    <div className="relative">
-      {/* Background with gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-rose-500 to-red-700 opacity-90" />
+    <motion.div
+    initial={{opacity:0}}
+    animate={{opacity:1}}
+    transition={{type:"spring", damping:10, stiffness:200}}
+    className="relative">
 
       {/* Hero content */}
       <div className="relative container py-24 md:py-32 text-white">
@@ -62,6 +64,6 @@ export function HeroSection() {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
