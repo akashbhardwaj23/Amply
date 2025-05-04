@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MapPin, Filter, Search } from "lucide-react"
 import { StationCard } from "@/components/station-card"
 import { MapComponent } from "@/components/map-component"
+import { useMap } from "@/hooks/usemap"
 
 // Mock data for stations
 const mockStations = [
@@ -58,6 +59,28 @@ const mockStations = [
     power: 100,
     lat: 37.765,
     lng: -122.41,
+  },
+  {
+    id: "5",
+    name: "SolCharge Delhi",
+    address: "Delhi",
+    price: 0.25,
+    rating: 4.8,
+    available: true,
+    power: 150,
+    lat: 28.6448,
+    lng: 77.216721,
+  },
+  {
+    id: "6",
+    name: "SolCharge Delhi New",
+    address: "New Delhi",
+    price: 0.25,
+    rating: 4.8,
+    available: true,
+    power: 150,
+    lat: 28.65,
+    lng: 77.2168,
   },
 ]
 
@@ -164,7 +187,7 @@ export default function MapPage() {
             </CardContent>
           </Card>
         </div>
-        
+
         <div className="lg:col-span-2">
           <Tabs defaultValue="map" className="w-full" onValueChange={(v : any) => setView(v as "list" | "map")}>
             <div className="flex justify-between items-center mb-4">
@@ -178,6 +201,7 @@ export default function MapPage() {
             <TabsContent value="map" className="mt-0">
               <div className="bg-muted rounded-lg overflow-hidden h-[600px]">
                 <MapComponent
+                  // map={mapRef}
                   stations={filteredStations}
                   selectedStation={selectedStation}
                   onSelectStation={setSelectedStation}
