@@ -49,7 +49,11 @@ export default function Navbar() {
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center space-x-2">
+<<<<<<< HEAD
             <span className="text-xl font-bold tracking-tight">Amply</span>
+=======
+            <span className="text-xl font-bold tracking-tight">ReVolt</span>
+>>>>>>> d633beab17bd6f2148bbf6307ef27afab95727b7
           </Link>
           <NavigationMenu>
             <NavigationMenuList>
