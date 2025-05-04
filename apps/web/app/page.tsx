@@ -8,7 +8,6 @@ export default function Home() {
   return (
     <div className="flex flex-col">
       <HeroSection />
-
       <section className="container py-20">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">Revolutionizing EV Charging on Solana</h2>
