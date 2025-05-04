@@ -49,7 +49,7 @@ export function HeroSection() {
               />
             </div>
             <Button type="submit" className="bg-white text-rose-600 hover:bg-white/90">
-              <Search className="mr-2 h-4 w-4" />
+              <Search className="h-4 w-4" />
               Search
             </Button>
           </form>
