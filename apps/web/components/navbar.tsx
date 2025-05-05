@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -31,6 +31,7 @@ export default function Navbar() {
   const [isSignedIn, setIsSignedIn] = useState(false)
   const pathname = usePathname()
   const [voiceCommandOpen, setVoiceCommandOpen] = useState(false)
+  const router = useRouter()
 
   const handleSignIn = () => {
     setIsSignedIn(true)
@@ -131,7 +132,7 @@ export default function Navbar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem>Profile</DropdownMenuItem>
-                <DropdownMenuItem>Dashboard</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/dashboard")}>Dashboard</DropdownMenuItem>
                 <DropdownMenuItem>Settings</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>

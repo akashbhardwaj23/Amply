@@ -11,6 +11,8 @@ import MapPage from "@/components/pages-components/maps/map-page";
 const DashBoardTabs = () => {
     const pathname = usePathname()
 
+    console.log(pathname)
+
     switch (pathname) {
         case "/dashboard/ai-pricing":
             return <DashboardAIPricing />;

@@ -2,7 +2,7 @@ import type React from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/components/provider/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import Navbar from "@/components/navbar";
 import Script from "next/script";
@@ -37,9 +37,6 @@ export default function RootLayout({
             <Toaster />
           </MapContextProvider>
         </ThemeProvider>
-        <Script
-          src={`https://apis.mappls.com/advancedmaps/api/${process.env.NEXT_PUBLIC_MAPPLES_TOKEN}/map_sdk?v=3.0&layer=vector`}
-        />
       </body>
     </html>
   );
