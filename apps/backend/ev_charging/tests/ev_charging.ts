@@ -6,15 +6,17 @@ import {
   SystemProgram,
   LAMPORTS_PER_SOL,
 } from '@solana/web3.js';
-import { Program, Provider, web3 } from '@project-serum/anchor';
-import { Borsh } from 'borsh';
+import { Program, AnchorProvider, web3 } from '@project-serum/anchor';
+import { serialize } from 'borsh';
 import fs from 'fs';
 import path from 'path';
 
+// Replace with your actual program ID
 const CHARGER_PROGRAM_ID = new PublicKey(
   '2KA72yueDz6PLUGVAse9QwDfo8QuSw39nYhSVXyhY2xc'
-); // Replace with your program ID
-const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
+);
+
+const connection = new Connection('http://127.0.0.1:8899', 'confirmed');
 const payer = Keypair.generate();
 const chargerAccount = Keypair.generate();
 
@@ -83,8 +85,19 @@ const chargerSchema = new Map([
 
 // Serialize Charger data to send to the Solana program
 function serializeCharger(charger: Charger): Buffer {
-  const chargerBuffer = Borsh.serialize(chargerSchema, charger);
-  return chargerBuffer;
+  return serialize(chargerSchema, charger);
+}
+
+// Load the program
+async function loadProgram() {
+  const wallet = new web3.Account(payer.secretKey);
+  const provider = new AnchorProvider(connection, wallet, {
+    commitment: 'confirmed',
+  });
+
+  const idlPath = path.resolve(__dirname, 'idl.json'); // Replace with your actual IDL file path
+  const idl = JSON.parse(fs.readFileSync(idlPath, 'utf8'));
+  return new Program(idl, CHARGER_PROGRAM_ID, provider);
 }
 
 // Create a new Charger account
@@ -108,17 +121,31 @@ async function createCharger() {
 
   const serializedCharger = serializeCharger(charger);
 
+  const lamports = await connection.getMinimumBalanceForRentExemption(
+    serializedCharger.length
+  );
+
+  const createAccountInstruction = SystemProgram.createAccount({
+    fromPubkey: payer.publicKey,
+    newAccountPubkey: chargerAccount.publicKey,
+    lamports,
+    space: serializedCharger.length,
+    programId: CHARGER_PROGRAM_ID,
+  });
+
   const createChargerInstruction = new web3.TransactionInstruction({
     programId: CHARGER_PROGRAM_ID,
     keys: [
       { pubkey: payerAccount, isSigner: true, isWritable: false },
       { pubkey: chargerAccount.publicKey, isSigner: false, isWritable: true },
-      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
     ],
-    data: Buffer.concat([Buffer.from([0]), serializedCharger]), // 0 indicates the "create" action
+    data: Buffer.concat([Buffer.from([0]), serializedCharger]),
   });
 
-  const transaction = new Transaction().add(createChargerInstruction);
+  const transaction = new Transaction()
+    .add(createAccountInstruction)
+    .add(createChargerInstruction);
+
   await sendTransaction(transaction);
 }
 
@@ -149,7 +176,7 @@ async function updateCharger() {
       { pubkey: payerAccount, isSigner: true, isWritable: false },
       { pubkey: chargerAccount.publicKey, isSigner: false, isWritable: true },
     ],
-    data: Buffer.concat([Buffer.from([1]), serializedCharger]), // 1 indicates the "update" action
+    data: Buffer.concat([Buffer.from([1]), serializedCharger]),
   });
 
   const transaction = new Transaction().add(updateChargerInstruction);
@@ -158,37 +185,39 @@ async function updateCharger() {
 
 // Send transaction and handle commitment
 async function sendTransaction(transaction: Transaction) {
-  const blockhash = await connection.getRecentBlockhash();
-  transaction.recentBlockhash = blockhash.blockhash;
-  transaction.feePayer = payer.publicKey;
+  try {
+    const blockhash = await connection.getRecentBlockhash();
+    transaction.recentBlockhash = blockhash.blockhash;
+    transaction.feePayer = payer.publicKey;
 
-  const signedTransaction = await payer.signTransaction(transaction);
-  const transactionSignature = await connection.sendRawTransaction(
-    signedTransaction.serialize()
-  );
-  await connection.confirmTransaction(transactionSignature);
-  console.log('Transaction confirmed:', transactionSignature);
-}
+    const signedTransaction = await transaction.sign(payer);
+    const transactionSignature = await connection.sendRawTransaction(
+      signedTransaction.serialize()
+    );
 
-// Load the program
-async function loadProgram() {
-  const wallet = new web3.Account(payer.secretKey);
-  const provider = new Provider(connection, wallet, {
-    commitment: 'confirmed',
-  });
-  return new Program(CHARGER_PROGRAM_ID, provider);
+    await connection.confirmTransaction(transactionSignature);
+    console.log('Transaction confirmed:', transactionSignature);
+  } catch (error) {
+    console.error('Error sending transaction:', error);
+  }
 }
 
 (async () => {
-  // Airdrop some SOL to the payer for testing
-  await connection.requestAirdrop(payer.publicKey, 2 * LAMPORTS_PER_SOL);
+  try {
+    // Airdrop some SOL to the payer for testing
+    const airdropSignature = await connection.requestAirdrop(
+      payer.publicKey,
+      2 * LAMPORTS_PER_SOL
+    );
 
-  // Wait for the airdrop to complete
-  await connection.confirmTransaction(await connection.getLatestBlockhash());
+    await connection.confirmTransaction(airdropSignature, 'confirmed');
 
-  // Create charger
-  await createCharger();
+    // Create charger
+    await createCharger();
 
-  // Update charger
-  await updateCharger();
+    // Update charger
+    await updateCharger();
+  } catch (error) {
+    console.error('Error in test execution:', error);
+  }
 })();
