@@ -26,12 +26,12 @@ export function HeroSection() {
     animate={{opacity:1}}
     transition={{type:"spring", damping:10, stiffness:200}}
     className="relative">
-      <div className="relative container py-24 md:py-32 text-primary">
+      <div className="relative container py-24 md:py-32 text-primary dark:text-white">
         <div className="max-w-3xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6">
             Find EV Charging Stations on the Solana Blockchain
           </h1>
-          <p className="text-xl md:text-2xl mb-8 text-primary/90">
+          <p className="text-xl md:text-2xl mb-8 text-primary/90 dark:text-white/90">
             Discover nearby charging stations, get AI-optimized pricing, and earn tokens with every charge
           </p>
 
@@ -46,7 +46,7 @@ export function HeroSection() {
                 onChange={(e) => setLocation(e.target.value)}
               />
             </div>
-            <Button type="submit" className="bg-primary text-background hover:backdrop-blur-md hover:bg-primary/80">
+            <Button type="submit" className="bg-primary text-background hover:backdrop-blur-md hover:bg-primary/80 dark:text-white">
               <Search className="h-4 w-4" />
               Search
             </Button>
@@ -56,7 +56,7 @@ export function HeroSection() {
             <Button asChild size="lg" variant="outline" className="border-accent text-foreground hover:backdrop-blur-md hover:bg-foreground/20">
               <Link href="/map">Find Stations</Link>
             </Button>
-            <Button asChild size="lg" className="bg-background border border-border text-rose-600 hover:bg-secondary/90">
+            <Button asChild size="lg" className="bg-primary border border-border text-white hover:bg-primary/90">
               <Link href="/register-station">Register Your Charger</Link>
             </Button>
           </div>

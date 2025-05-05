@@ -1,8 +1,8 @@
+import RegisterStationPage from "@/app/register-station/page";
+
 const DashboardRegisterStation = () => {
     return (
-        <div>
-            <h1>Register Your Station</h1>
-        </div>
+        <RegisterStationPage />
     );
 }
  

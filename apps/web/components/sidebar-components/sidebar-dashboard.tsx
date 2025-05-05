@@ -75,7 +75,7 @@ export default function SidebarComponent() {
 
   return (
     <Sidebar collapsible="icon">
-        <SidebarContent className="text-white mt-4">
+        <SidebarContent className="text-foreground dark:text-white mt-4">
           <SidebarGroup>
             <SidebarGroupContent>
             <div className="flex justify-end w-full">
@@ -87,7 +87,7 @@ export default function SidebarComponent() {
                     <SidebarMenuButton
                       className={cn(
                         "text-sm",
-                        pathname === item.url && "bg-[#333] dark:bg-primary"
+                        pathname === item.url && "bg-primary"
                       )}
                       asChild
                     >

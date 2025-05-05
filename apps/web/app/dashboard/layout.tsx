@@ -3,6 +3,7 @@ import SidebarComponent from "@/components/sidebar-components/sidebar-dashboard"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Separator } from "@radix-ui/react-dropdown-menu";
 import { cookies } from "next/headers";
+import Link from "next/link";
 
 export default async function DashboardLayout({
   children,
@@ -16,21 +17,21 @@ export default async function DashboardLayout({
   return (
     <SidebarProvider  style={{
         //@ts-ignore
-        "--sidebar-width": "15rem"
-      }}>
+        "--sidebar-width": "15rem",
+      }} className="bg-white">
     <SidebarComponent/>
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b px-4 dark:!bg-[#333] bg-rose-500 ">
-          <div className="flex h-16 shrink-0 items-center gap-2 text-white">
+        <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b px-4">
+          <div className="flex h-16 shrink-0 items-center gap-2 text-foreground">
             <Separator className="mr-2 h-4" />
-            <a href="/" className="flex items-center space-x-2">
+            <Link href="/" className="flex items-center space-x-2">
               <span className="text-xl font-bold tracking-tight">Amply</span>
-            </a>
+            </Link>
           </div>
 
           <ModeToggle />
         </header>
-        <div>{children}</div>
+        <div className="h-full">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );
