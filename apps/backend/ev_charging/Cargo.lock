@@ -542,9 +542,6 @@ name = "ev_charging"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
- "solana-address-lookup-table-interface",
- "solana-program",
- "solana-pubkey",
 ]
 
 [[package]]
