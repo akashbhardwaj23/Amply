@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 // Declare the program ID (update with your deployed program ID)
-declare_id!("5FyPMX3L9MZCgfBmrC42RmKv6qzs91e8KFtF2MHTJqbZ");
+declare_id!("CbhmEH9wJTGShWpyHebvj15DXFJu7TkMK7pXydc9qoQ1");
 
 #[program]
 pub mod ev_charging {

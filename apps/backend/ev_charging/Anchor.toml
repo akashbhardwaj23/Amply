@@ -6,7 +6,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-ev_charging = "5FyPMX3L9MZCgfBmrC42RmKv6qzs91e8KFtF2MHTJqbZ"
+ev_charging = "CbhmEH9wJTGShWpyHebvj15DXFJu7TkMK7pXydc9qoQ1"
 
 [registry]
 url = "https://api.apr.dev"
