@@ -33,7 +33,7 @@ import { Upload, Check } from 'lucide-react';
 // --- Anchor/Solana Imports ---
 import { web3, AnchorProvider, Program, Provider } from '@coral-xyz/anchor';
 import BN from 'bn.js';
-import idl from '../../../idl/ev_charging.json'; // <-- adjust path if needed
+import idl from '@/idl/ev_charging.json'; // <-- adjust path if needed
 
 // const programId = new web3.PublicKey(
 //   'CbhmEH9wJTGShWpyHebvj15DXFJu7TkMK7pXydc9qoQ1'

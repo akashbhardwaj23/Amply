@@ -38,12 +38,6 @@ export function MapComponent({
     lng: number;
   } | null>(null);
   // const [mapLoaded, setMapLoaded] = useState(false);
-  const [viewState, setViewState] = useState({
-    longitude: 77.216721,
-    latitude: 28.6448,
-    zoom: 14,
-  });
-
   // const onLoad = () => {
   //   console.log("Loaded");
   //   setMapLoaded(true);

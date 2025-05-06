@@ -39,13 +39,13 @@ export default function Navbar() {
 
   console.log("User is ", user)
 
-  const handleSignIn = () => {
-    signIn();
+  const handleSignIn = async() => {
+    await signIn();
     setIsSignedIn(true)
   }
 
-  const handleSignOut = () => {
-    signOut()
+  const handleSignOut = async () => {
+    await signOut()
     setIsSignedIn(false)
   }
 

@@ -17,7 +17,9 @@ const nextConfig = {
 console.log(process.env.CIVIC_AUTH_CLIENT_ID)
 
 const withCivicAuth = createCivicAuthPlugin({
-  clientId: process.env.CIVIC_AUTH_CLIENT_ID
+  clientId: process.env.CIVIC_AUTH_CLIENT_ID,
+  enableSolanaWalletAdapter: true, 
+  loginUrl : "/login"
 });
 
 export default withCivicAuth(nextConfig);

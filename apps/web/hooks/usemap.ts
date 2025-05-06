@@ -3,7 +3,7 @@ import { MapContext } from "@/app/context/MapContext";
 import { useContext } from "react";
 
 
-export function useMap(){
+export function useAMap(){
   const mapInstance = useContext(MapContext);
   if(!mapInstance){
     throw Error("Map Should be Provided");

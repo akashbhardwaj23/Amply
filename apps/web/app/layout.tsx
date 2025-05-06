@@ -4,10 +4,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/provider/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
-import Navbar from "@/components/navbar";
-import Script from "next/script";
 import { MapContextProvider } from "./context/MapContext";
-import { CivicAuthProvider } from "@civic/auth-web3/nextjs";
+import AuthProvider from "@/components/provider/auth-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,7 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <CivicAuthProvider>
+        <AuthProvider>
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
@@ -39,7 +37,7 @@ export default function RootLayout({
               <Toaster />
             </MapContextProvider>
           </ThemeProvider>
-        </CivicAuthProvider>
+        </AuthProvider>
       </body>
     </html>
   );

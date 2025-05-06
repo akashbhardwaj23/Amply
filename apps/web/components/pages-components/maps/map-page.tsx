@@ -1,6 +1,5 @@
 "use client"
 
-import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
@@ -12,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MapPin, Filter, Search } from "lucide-react"
 import { StationCard } from "@/components/station-card"
 import { MapComponent } from "@/components/map-component"
-import { useMap } from "@/hooks/usemap"
+import { useWallet } from "@solana/wallet-adapter-react"
 
 const mockStations = [
   {
@@ -84,6 +83,9 @@ const mockStations = [
 ]
 
 export default function MapPage() {
+  const {wallet} = useWallet();
+
+  console.log("wallets are ", wallet)
   const searchParams = useSearchParams()
   const locationQuery = searchParams.get("location")
 
