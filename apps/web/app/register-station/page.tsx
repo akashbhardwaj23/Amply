@@ -44,7 +44,6 @@ import idl from '../../idl/ev_charging.json';
 
 const programId = new web3.PublicKey(idl.address);
 
-// const network = "https://api.devnet.solana.com" // solana devnet
 const network = 'http://127.0.0.1:8899'; // or localhost
 
 const getPhantomProvider = (): PhantomProvider | undefined => {

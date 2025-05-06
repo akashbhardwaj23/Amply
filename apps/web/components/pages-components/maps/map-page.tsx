@@ -14,7 +14,6 @@ import { StationCard } from "@/components/station-card"
 import { MapComponent } from "@/components/map-component"
 import { useMap } from "@/hooks/usemap"
 
-// Mock data for stations
 const mockStations = [
   {
     id: "1",
@@ -108,7 +107,6 @@ export default function MapPage() {
     setFilteredStations(filtered)
   }, [stations, priceRange, powerRange, availableOnly])
 
-  // Simulate search with AI
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     // In a real app, this would call an API with AI search capabilities

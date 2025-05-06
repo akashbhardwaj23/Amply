@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@civic/auth-web3": "^0.5.6",
     "@coral-xyz/anchor": "^0.31.1",
     "@hookform/resolvers": "latest",
     "@next/env": "^15.3.1",
