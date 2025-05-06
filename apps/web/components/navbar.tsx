@@ -26,18 +26,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {motion} from "motion/react"
+import { useUser } from "@civic/auth-web3/react";
+import { AvatarImage } from "@radix-ui/react-avatar"
 
 export default function Navbar() {
   const [isSignedIn, setIsSignedIn] = useState(false)
   const pathname = usePathname()
   const [voiceCommandOpen, setVoiceCommandOpen] = useState(false)
   const router = useRouter()
+  const {user, signIn, signOut} = useUser()
+
+
+  console.log("User is ", user)
 
   const handleSignIn = () => {
+    signIn();
     setIsSignedIn(true)
   }
 
   const handleSignOut = () => {
+    signOut()
     setIsSignedIn(false)
   }
 
@@ -121,11 +129,12 @@ export default function Navbar() {
             <Mic className="h-5 w-5" />
           </Button>
           <ModeToggle />
-          {isSignedIn ? (
+          {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
+                    <AvatarImage src={user.picture}/>
                     <AvatarFallback>US</AvatarFallback>
                   </Avatar>
                 </Button>

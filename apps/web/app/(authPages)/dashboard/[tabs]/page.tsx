@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import DashboardAIPricing from "../_tabs/ai-pricing";
-import DashboardFindStation from "../_tabs/find-stations";
 import DashboardHome from "../_tabs/home";
 import DashboardRegisterStation from "../_tabs/register-station";
 import DashboardRewards from "../_tabs/rewards";
@@ -26,7 +25,6 @@ const DashBoardTabs = () => {
             return <DashboardHome/>
 
     }
-    return <DashboardHome/>;
 }
  
 export default DashBoardTabs;

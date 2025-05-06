@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import Navbar from "@/components/navbar";
 import Script from "next/script";
 import { MapContextProvider } from "./context/MapContext";
+import { CivicAuthProvider } from "@civic/auth-web3/nextjs";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,19 +25,21 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <MapContextProvider>
-            <div className="flex min-h-screen flex-col">
-              <main className="flex-1">{children}</main>
-            </div>
-            <Toaster />
-          </MapContextProvider>
-        </ThemeProvider>
+        <CivicAuthProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <MapContextProvider>
+              <div className="flex min-h-screen flex-col">
+                <main className="flex-1">{children}</main>
+              </div>
+              <Toaster />
+            </MapContextProvider>
+          </ThemeProvider>
+        </CivicAuthProvider>
       </body>
     </html>
   );

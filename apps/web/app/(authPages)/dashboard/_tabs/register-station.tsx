@@ -1,4 +1,4 @@
-import RegisterStationPage from "@/app/register-station/page";
+import RegisterStationPage from "@/app/(auth)/register-station/page";
 
 const DashboardRegisterStation = () => {
     return (

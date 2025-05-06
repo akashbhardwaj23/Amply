@@ -33,7 +33,7 @@ import { Upload, Check } from 'lucide-react';
 // --- Anchor/Solana Imports ---
 import { web3, AnchorProvider, Program, Provider } from '@coral-xyz/anchor';
 import BN from 'bn.js';
-import idl from '../../idl/ev_charging.json'; // <-- adjust path if needed
+import idl from '../../../idl/ev_charging.json'; // <-- adjust path if needed
 
 // const programId = new web3.PublicKey(
 //   'CbhmEH9wJTGShWpyHebvj15DXFJu7TkMK7pXydc9qoQ1'
@@ -41,7 +41,6 @@ import idl from '../../idl/ev_charging.json'; // <-- adjust path if needed
 
 const programId = new web3.PublicKey(idl.address);
 
-// const network = "https://api.devnet.solana.com" // solana devnet
 const network = 'http://127.0.0.1:8899'; // or localhost
 
 const getPhantomProvider = () => {
@@ -115,9 +114,7 @@ export default function RegisterStationPage() {
     const anchorProvider = new AnchorProvider(connection, phantom, {});
     console.log('programid', programId);
     console.log('anchor', anchorProvider);
-    const program = new Program(idl as any, {
-      connection
-    });
+    const program = new Program(idl as any,anchorProvider);
 
     // Find PDA for charger account
     const [chargerPda] = await web3.PublicKey.findProgramAddress(

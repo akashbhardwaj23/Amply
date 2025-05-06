@@ -10,7 +10,7 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   return (
  
     <NextThemesProvider {...props}>
-      {pathname && !pathname.startsWith("/dashboard") && <Navbar />}
+      {pathname && !pathname.startsWith("/dashboard") &&!pathname.startsWith("/login")&&!pathname.startsWith("/register") && <Navbar />}
       {children}</NextThemesProvider>
    )
 }
