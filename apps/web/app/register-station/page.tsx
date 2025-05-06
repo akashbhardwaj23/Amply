@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
+import { FieldErrors } from 'react-hook-form';
 
 import {
   Form,
@@ -31,25 +32,28 @@ import { Separator } from '@/components/ui/separator';
 import { Upload, Check } from 'lucide-react';
 
 // --- Anchor/Solana Imports ---
-import { web3, AnchorProvider, Program } from '@coral-xyz/anchor';
+import {
+  web3,
+  AnchorProvider,
+  Program,
+  setProvider,
+  getProvider,
+} from '@coral-xyz/anchor';
 import BN from 'bn.js';
-import idl from '../../idl/ev_charging.json'; // <-- adjust path if needed
-
-// const programId = new web3.PublicKey(
-//   'CbhmEH9wJTGShWpyHebvj15DXFJu7TkMK7pXydc9qoQ1'
-// ); // <-- replace with your deployed program ID
+import idl from '../../idl/ev_charging.json';
 
 const programId = new web3.PublicKey(idl.address);
 
 // const network = "https://api.devnet.solana.com" // solana devnet
 const network = 'http://127.0.0.1:8899'; // or localhost
 
-const getPhantomProvider = () => {
+const getPhantomProvider = (): PhantomProvider | undefined => {
   if (typeof window !== 'undefined' && 'solana' in window) {
-    const provider = window.solana;
+    const provider = window.solana as PhantomProvider;
     if (provider.isPhantom) return provider;
   }
   window.open('https://phantom.app/', '_blank');
+  return undefined;
 };
 
 const stationFormSchema = z.object({
@@ -99,38 +103,40 @@ export default function RegisterStationPage() {
 
   // --- Anchor integration onSubmit ---
   async function onSubmit(data: StationFormValues) {
-    console.log('111');
     const phantom = getPhantomProvider();
     if (!phantom) {
       alert('Please install Phantom Wallet!');
       return;
     }
-    await phantom.connect();
-
-    console.log('22');
-    console.log('IDL:', idl);
-
-    const connection = new web3.Connection(network, 'confirmed');
-    const anchorProvider = new AnchorProvider(connection, phantom, {});
-    console.log('programid', programId);
-    console.log('anchor', anchorProvider);
-    const program = new Program(idl as any, programId, anchorProvider);
-
-    // Find PDA for charger account
-    const [chargerPda] = await web3.PublicKey.findProgramAddress(
-      [Buffer.from(data.name)],
-      programId
-    );
-
-    // Map charger type to display string
-    const chargerTypeMap: { [key: string]: string } = {
-      level1: 'Level 1 (120V)',
-      level2: 'Level 2 (240V)',
-      dcFast: 'DC Fast Charging',
-      other: 'Other',
-    };
 
     try {
+      await phantom.connect();
+
+      const connection = new web3.Connection(network, 'confirmed');
+      const provider = new AnchorProvider(
+        connection,
+        phantom,
+        AnchorProvider.defaultOptions()
+      );
+      setProvider(provider);
+
+      const anchorProvider = getProvider();
+      const program = new Program(idl, anchorProvider);
+
+      // Find PDA for charger account
+      const [chargerPda] = await web3.PublicKey.findProgramAddress(
+        [Buffer.from(data.name)],
+        programId
+      );
+
+      // Map charger type to display string
+      const chargerTypeMap: { [key: string]: string } = {
+        level1: 'Level 1 (120V)',
+        level2: 'Level 2 (240V)',
+        dcFast: 'DC Fast Charging',
+        other: 'Other',
+      };
+
       await program.methods
         .createCharger(
           data.name,
@@ -159,20 +165,38 @@ export default function RegisterStationPage() {
     }
   }
 
-  function onError(errors: any) {
+  function onError(errors: FieldErrors<StationFormValues>) {
     console.log('Validation errors:', errors);
-    // Find the first error message
-    const firstError = Object.values(errors)[0];
-    let message = 'Please check all fields.';
-    if (
-      firstError &&
-      typeof firstError === 'object' &&
-      'message' in firstError
-    ) {
-      message = firstError.message;
+
+    // Helper to get first error message from FieldErrors recursively
+    function getFirstErrorMessage(errors: FieldErrors<any>): string | null {
+      for (const key in errors) {
+        const errorOrNested = errors[key];
+        if (!errorOrNested) continue;
+
+        // If this is a FieldError with message
+        if (
+          'message' in errorOrNested &&
+          typeof errorOrNested.message === 'string'
+        ) {
+          return errorOrNested.message;
+        }
+
+        // Otherwise, recurse into nested errors
+        if (typeof errorOrNested === 'object') {
+          const nestedMessage = getFirstErrorMessage(
+            errorOrNested as FieldErrors<any>
+          );
+          if (nestedMessage) return nestedMessage;
+        }
+      }
+      return null;
     }
+
+    const message = getFirstErrorMessage(errors) || 'Please check all fields.';
+
     toast({
-      variant: 'destructive', // this makes it an error toast
+      variant: 'destructive',
       title: 'Form Error',
       description: message,
     });

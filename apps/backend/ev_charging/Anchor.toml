@@ -12,7 +12,8 @@ ev_charging = "CbhmEH9wJTGShWpyHebvj15DXFJu7TkMK7pXydc9qoQ1"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+# cluster = "localnet"
+cluster = "https://api.devnet.solana.com"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
