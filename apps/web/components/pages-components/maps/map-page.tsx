@@ -1,7 +1,7 @@
 "use client"
 
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,8 @@ import { MapPin, Filter, Search } from "lucide-react"
 import { StationCard } from "@/components/station-card"
 import { MapComponent } from "@/components/map-component"
 import { useWallet } from "@solana/wallet-adapter-react"
+import { MapRef, useMap } from "react-map-gl/maplibre"
+import { useAMap } from "@/hooks/usemap"
 
 const mockStations = [
   {
@@ -83,9 +85,6 @@ const mockStations = [
 ]
 
 export default function MapPage() {
-  const {wallet} = useWallet();
-
-  console.log("wallets are ", wallet)
   const searchParams = useSearchParams()
   const locationQuery = searchParams.get("location")
 
@@ -97,6 +96,20 @@ export default function MapPage() {
   const [filteredStations, setFilteredStations] = useState(mockStations)
   const [selectedStation, setSelectedStation] = useState<string | null>(null)
   const [view, setView] = useState<"list" | "map">("map")
+  const mapRef = useRef<MapRef | null>(null);
+
+  const mapTabRef = useRef<HTMLButtonElement | null>(null);
+  const listTabRef = useRef<HTMLButtonElement | null>(null);
+
+
+  const handleTabChange = (tabType : "map" | "list") => {
+    if(tabType === "map"){
+      mapTabRef.current?.click();
+    } else {
+      listTabRef.current?.click()
+    }
+  }
+
 
   // Filter stations based on criteria
   useEffect(() => {
@@ -192,8 +205,8 @@ export default function MapPage() {
           <Tabs defaultValue="map" className="w-full" onValueChange={(v : any) => setView(v as "list" | "map")}>
             <div className="flex justify-between items-center mb-4">
               <TabsList>
-                <TabsTrigger value="map">Map View</TabsTrigger>
-                <TabsTrigger value="list">List View</TabsTrigger>
+                <TabsTrigger value="map" ref={mapTabRef}>Map View</TabsTrigger>
+                <TabsTrigger value="list" ref={listTabRef}>List View</TabsTrigger>
               </TabsList>
               <div className="text-sm text-muted-foreground">{filteredStations.length} stations found</div>
             </div>
@@ -201,7 +214,7 @@ export default function MapPage() {
             <TabsContent value="map" className="mt-0">
               <div className="bg-muted rounded-lg overflow-hidden h-[600px]">
                 <MapComponent
-                  // map={mapRef}
+                  mapRef = {mapRef}
                   stations={filteredStations}
                   selectedStation={selectedStation}
                   onSelectStation={setSelectedStation}
@@ -215,9 +228,12 @@ export default function MapPage() {
                   filteredStations.map((station) => (
                     <StationCard
                       key={station.id}
+                      mapRef={mapRef}
                       station={station}
+                      handleTabChange = {() => handleTabChange("map")}
                       selected={selectedStation === station.id}
                       onSelect={() => setSelectedStation(station.id)}
+                      setView={setView}
                     />
                   ))
                 ) : (

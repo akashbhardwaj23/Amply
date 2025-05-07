@@ -36,9 +36,6 @@ export default function Navbar() {
   const router = useRouter()
   const {user, signIn, signOut} = useUser()
 
-
-  console.log("User is ", user)
-
   const handleSignIn = async() => {
     await signIn();
     setIsSignedIn(true)

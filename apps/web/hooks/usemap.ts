@@ -11,6 +11,6 @@ export function useAMap(){
 
   return {
     map :  mapInstance.map,
-    setMap : mapInstance.setMap
+    setMap : mapInstance.setMap,
   }
 }

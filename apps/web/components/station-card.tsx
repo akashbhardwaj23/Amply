@@ -4,6 +4,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Zap, Star } from "lucide-react"
+import { MapRef, useMap } from "react-map-gl/maplibre"
+import { Dispatch, RefObject, SetStateAction, useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 
 interface Station {
   id: string
@@ -13,15 +16,33 @@ interface Station {
   rating: number
   available: boolean
   power: number
+  lat: number;
+  lng: number;
 }
 
 interface StationCardProps {
   station: Station
+  handleTabChange : () => void
+  mapRef : RefObject<MapRef | null>
   selected: boolean
   onSelect: () => void
+  setView : Dispatch<SetStateAction<"list" | "map">>
 }
 
-export function StationCard({ station, selected, onSelect }: StationCardProps) {
+export function StationCard({ station, mapRef,handleTabChange, selected, onSelect }: StationCardProps) {
+  const handleClick = (longitude : number, latitude: number) => {
+    console.log("clicked")
+    if(mapRef.current){
+      const map = mapRef.current;
+      map.flyTo({
+        center: [longitude, latitude],
+        zoom: 16,
+        speed: 0.2,
+      })
+    }
+    handleTabChange()
+  }
+
   return (
     <Card className={`transition-all ${selected ? "border-rose-500 shadow-md" : "hover:shadow-sm"}`} onClick={onSelect}>
       <CardContent className="p-4">
@@ -62,7 +83,7 @@ export function StationCard({ station, selected, onSelect }: StationCardProps) {
             </div>
           </div>
           <div className="flex flex-col space-y-2">
-            <Button size="sm" variant="default">
+            <Button size="sm" variant="default" onClick={() => handleClick(station.lng, station.lat)}>
               Navigate
             </Button>
             <Button size="sm" variant="outline">

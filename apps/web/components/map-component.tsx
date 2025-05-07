@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { RefObject, useCallback, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Navigation, MapPin, Zap } from 'lucide-react';
@@ -20,18 +20,18 @@ interface Station {
 }
 
 interface MapComponentProps {
-  // map :maplibregl.Map
+  mapRef : RefObject<MapRef | null>
   stations: Station[];
   selectedStation: string | null;
   onSelectStation: (id: string) => void;
 }
 
 export function MapComponent({
+  mapRef,
   stations,
   selectedStation,
   onSelectStation,
 }: MapComponentProps) {
-  const mapRef = useRef<MapRef | null>(null);
   // const [map, setMap] = useState<MapRef | null>(null)
   const [userLocation, setUserLocation] = useState<{
     lat: number;
@@ -54,9 +54,11 @@ export function MapComponent({
           speed: 0.2,
         });
       }
+
     },
     []
   );
+
 
   return (
     <div className="relative h-full w-full bg-gray-100 dark:bg-gray-800">
@@ -66,6 +68,7 @@ export function MapComponent({
           latitude: 28.6448,
           zoom: 14,
         }}
+        id="findStationMap"
         ref={mapRef}
         interactive
         style={{
