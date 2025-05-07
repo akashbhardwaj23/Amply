@@ -37,11 +37,6 @@ export function MapComponent({
     lat: number;
     lng: number;
   } | null>(null);
-  // const [mapLoaded, setMapLoaded] = useState(false);
-  // const onLoad = () => {
-  //   console.log("Loaded");
-  //   setMapLoaded(true);
-  // }
 
   const flyToThePosition = useCallback(
     (longitude: number, latitude: number) => {

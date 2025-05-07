@@ -4,8 +4,8 @@ import { ChevronRight, Zap, MapPin, Shield, Coins } from "lucide-react"
 import { HeroSection } from "@/components/hero-section"
 import { FeatureCard } from "@/components/feature-card"
 
-
 export default function Home() {
+
   return (
     <div className="flex flex-col">
       <HeroSection />

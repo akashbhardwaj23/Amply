@@ -202,7 +202,7 @@ export default function MapPage() {
         </div>
 
         <div className="lg:col-span-2">
-          <Tabs defaultValue="map" className="w-full" onValueChange={(v : any) => setView(v as "list" | "map")}>
+          <Tabs defaultValue="map" value={view} className="w-full" onValueChange={(v : any) => setView(v as "list" | "map")}>
             <div className="flex justify-between items-center mb-4">
               <TabsList>
                 <TabsTrigger value="map" ref={mapTabRef}>Map View</TabsTrigger>

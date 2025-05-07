@@ -30,12 +30,10 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <MapContextProvider>
               <div className="flex min-h-screen flex-col">
                 <main className="flex-1">{children}</main>
               </div>
               <Toaster />
-            </MapContextProvider>
           </ThemeProvider>
         </AuthProvider>
       </body>

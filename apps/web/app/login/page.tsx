@@ -5,9 +5,15 @@ import { SignInButton } from "@civic/auth-web3/react";
 import { getUser } from "@civic/auth-web3/nextjs";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { redirect } from "next/navigation";
 
 export default async function SignIn(){
     const user = await getUser();
+
+
+    if(user){
+        redirect("/")
+    }
     
     return (
         <div className="flex relative max-w-4xl mx-auto h-screen justify-center top-40">
@@ -33,15 +39,9 @@ export default async function SignIn(){
                     <Input id="password"/>
                     </div>
 
-                   {!user ? (<div className="flex justify-center items-center">
+                   {!user && (<div className="flex justify-center items-center">
                             <Button variant={"secondary"}><SignInButton style={{border: "0px"}} /></Button>
-                   </div>) : (
-                    <div className="flex justify-center items-center">
-                        <Link href={"/"}>
-                        <Button>Home</Button>
-                        </Link>
-                    </div>
-                   )}
+                   </div>)}
                 </CardContent>
             </Card>
             </div>

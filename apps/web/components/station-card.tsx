@@ -29,18 +29,24 @@ interface StationCardProps {
   setView : Dispatch<SetStateAction<"list" | "map">>
 }
 
-export function StationCard({ station, mapRef,handleTabChange, selected, onSelect }: StationCardProps) {
+export function StationCard({ station, mapRef,handleTabChange, selected, onSelect, setView }: StationCardProps) {
+  const map = useMap();
+
+  console.log("map is ",map)
   const handleClick = (longitude : number, latitude: number) => {
     console.log("clicked")
     if(mapRef.current){
       const map = mapRef.current;
+      console.log("map ", map)
       map.flyTo({
         center: [longitude, latitude],
         zoom: 16,
-        speed: 0.2,
+        speed: 2,
       })
     }
-    handleTabChange()
+  
+
+    setView("map")
   }
 
   return (
