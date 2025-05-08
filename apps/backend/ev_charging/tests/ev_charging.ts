@@ -5,19 +5,14 @@ import * as anchor from '@coral-xyz/anchor';
 import { Program } from '@coral-xyz/anchor';
 import * as evCharging from '../target/types/ev_charging.ts';
 import BN from 'bn.js';
-
 import { assert } from 'chai';
 
 describe('ev_charging', () => {
-  // Configure the client to use the local cluster.
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
   const program = anchor.workspace.EvCharging as Program<evCharging.EvCharging>;
 
-  // PDA seeds and bump will be derived from charger name
-  const chargerName = 'Charger 1';
-
-  // PDA for the charger account
+  const chargerName = 'Charger ' + Date.now();
   let chargerPda: anchor.web3.PublicKey;
   let bump: number;
 
@@ -27,7 +22,6 @@ describe('ev_charging', () => {
       program.programId
     );
 
-    // Call create_charger instruction
     await program.methods
       .createCharger(
         chargerName,
@@ -37,8 +31,8 @@ describe('ev_charging', () => {
         '12345',
         'Fast charging station',
         'Type1',
-        new BN(5000),
-        20.0,
+        new BN(5000), // power
+        new BN(2000), // price in cents (e.g., $20.00)
         'TypeA, TypeB'
       )
       .accounts({
@@ -48,8 +42,8 @@ describe('ev_charging', () => {
       })
       .rpc();
 
-    // Fetch the account and verify data
     const chargerAccount = await program.account.charger.fetch(chargerPda);
+    // console.log(typeof chargerAccount.price, chargerAccount.price);
 
     assert.equal(
       chargerAccount.owner.toBase58(),
@@ -57,11 +51,12 @@ describe('ev_charging', () => {
     );
     assert.equal(chargerAccount.name, chargerName);
     assert.equal(chargerAccount.power.toNumber(), 5000);
-    assert.equal(chargerAccount.price, 20.0);
+    assert.equal(chargerAccount.price, 2000); // cents
   });
 
+  // Uncomment and implement this only if you add updateCharger to your Rust program
+
   it('Updates the charger account', async () => {
-    // Call update_charger instruction
     await program.methods
       .updateCharger(
         chargerName,
@@ -72,7 +67,7 @@ describe('ev_charging', () => {
         'Updated description',
         'Type2',
         new BN(6000),
-        25.5,
+        new BN(2550), // $25.50
         'TypeC, TypeD'
       )
       .accounts({
@@ -81,12 +76,11 @@ describe('ev_charging', () => {
       })
       .rpc();
 
-    // Fetch the updated account and verify changes
     const updatedCharger = await program.account.charger.fetch(chargerPda);
 
     assert.equal(updatedCharger.address, '5678 New Street');
     assert.equal(updatedCharger.city, 'NewCity');
     assert.equal(updatedCharger.power.toNumber(), 6000);
-    assert.equal(updatedCharger.price, 25.5);
+    assert.equal(updatedCharger.price, 2550);
   });
 });
