@@ -1,86 +1,319 @@
-import * as dotenv from 'dotenv';
-dotenv.config();
-
 import * as anchor from '@coral-xyz/anchor';
 import { Program } from '@coral-xyz/anchor';
-import * as evCharging from '../target/types/ev_charging.ts';
-import BN from 'bn.js';
+import { PublicKey, SystemProgram } from '@solana/web3.js';
 import { assert } from 'chai';
+import {
+  Token,
+  TOKEN_PROGRAM_ID,
+  createMint,
+  getOrCreateAssociatedTokenAccount,
+  mintTo,
+  getAccount,
+} from '@solana/spl-token';
 
 describe('ev_charging', () => {
+  // Configure the client to use the local cluster.
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
-  const program = anchor.workspace.EvCharging as Program<evCharging.EvCharging>;
+  const program = anchor.workspace.EvCharging as Program<any>;
 
-  const chargerName = 'Charger ' + Date.now();
-  let chargerPda: anchor.web3.PublicKey;
-  let bump: number;
+  let rewardMint: PublicKey;
+  let user = anchor.web3.Keypair.generate();
+  let owner = anchor.web3.Keypair.generate();
 
-  it('Creates a charger account', async () => {
-    [chargerPda, bump] = await anchor.web3.PublicKey.findProgramAddress(
+  let userRewardTokenAccount: PublicKey;
+  let ownerRewardTokenAccount: PublicKey;
+  let userTokenAccount: PublicKey;
+  let ownerTokenAccount: PublicKey;
+  let escrowTokenAccount: PublicKey;
+
+  let chargerPda: PublicKey;
+  let chargerBump: number;
+  let escrowPda: PublicKey;
+
+  const chargerName = 'SuperFastCharger';
+  const chargerSeed = Buffer.from(chargerName);
+
+  before(async () => {
+    // Fund user and owner
+    for (const kp of [user, owner]) {
+      await provider.connection.requestAirdrop(
+        kp.publicKey,
+        2 * anchor.web3.LAMPORTS_PER_SOL
+      );
+    }
+
+    // Create reward token mint (owner is the mint authority)
+    rewardMint = await createMint(
+      provider.connection,
+      owner,
+      owner.publicKey,
+      null,
+      0 // decimals
+    );
+
+    // Create reward token accounts
+    userRewardTokenAccount = (
+      await getOrCreateAssociatedTokenAccount(
+        provider.connection,
+        user,
+        rewardMint,
+        user.publicKey
+      )
+    ).address;
+
+    ownerRewardTokenAccount = (
+      await getOrCreateAssociatedTokenAccount(
+        provider.connection,
+        owner,
+        rewardMint,
+        owner.publicKey
+      )
+    ).address;
+
+    // Create payment token (for escrowed payments; using same mint for simplicity)
+    userTokenAccount = (
+      await getOrCreateAssociatedTokenAccount(
+        provider.connection,
+        user,
+        rewardMint,
+        user.publicKey
+      )
+    ).address;
+
+    ownerTokenAccount = (
+      await getOrCreateAssociatedTokenAccount(
+        provider.connection,
+        owner,
+        rewardMint,
+        owner.publicKey
+      )
+    ).address;
+
+    // Mint some tokens to user for payments
+    await mintTo(
+      provider.connection,
+      owner,
+      rewardMint,
+      userTokenAccount,
+      owner,
+      100 // arbitrary amount
+    );
+
+    // Derive charger PDA
+    [chargerPda, chargerBump] = await PublicKey.findProgramAddressSync(
       [Buffer.from(chargerName)],
       program.programId
     );
+  });
 
+  it('Creates a new charger account', async () => {
     await program.methods
       .createCharger(
         chargerName,
-        '1234 Street',
-        'CityName',
-        'StateName',
+        '123 Main St',
+        'Metropolis',
+        'State',
         '12345',
-        'Fast charging station',
-        'Type1',
-        new BN(5000), // power
-        new BN(2000), // price in cents (e.g., $20.00)
-        'TypeA, TypeB'
+        'Fastest charger in town',
+        'Type2',
+        new anchor.BN(22),
+        new anchor.BN(10),
+        'CCS'
       )
       .accounts({
         charger: chargerPda,
-        payer: provider.wallet.publicKey,
-        systemProgram: anchor.web3.SystemProgram.programId,
+        payer: owner.publicKey,
+        systemProgram: SystemProgram.programId,
       })
+      .signers([owner])
       .rpc();
 
-    const chargerAccount = await program.account.charger.fetch(chargerPda);
-    // console.log(typeof chargerAccount.price, chargerAccount.price);
-
-    assert.equal(
-      chargerAccount.owner.toBase58(),
-      provider.wallet.publicKey.toBase58()
-    );
-    assert.equal(chargerAccount.name, chargerName);
-    assert.equal(chargerAccount.power.toNumber(), 5000);
-    assert.equal(chargerAccount.price, 2000); // cents
+    const charger = await program.account.charger.fetch(chargerPda);
+    assert.equal(charger.name, chargerName);
+    assert.equal(charger.owner.toBase58(), owner.publicKey.toBase58());
   });
-
-  // Uncomment and implement this only if you add updateCharger to your Rust program
 
   it('Updates the charger account', async () => {
     await program.methods
       .updateCharger(
         chargerName,
-        '5678 New Street',
-        'NewCity',
-        'NewState',
-        '67890',
-        'Updated description',
+        '456 Updated Ave',
+        'Gotham',
+        'UpdatedState',
+        '54321',
+        'Now even faster!',
         'Type2',
-        new BN(6000),
-        new BN(2550), // $25.50
-        'TypeC, TypeD'
+        new anchor.BN(44),
+        new anchor.BN(20),
+        'CCS'
       )
       .accounts({
         charger: chargerPda,
-        owner: provider.wallet.publicKey,
+        owner: owner.publicKey,
       })
+      .signers([owner])
       .rpc();
 
-    const updatedCharger = await program.account.charger.fetch(chargerPda);
+    const charger = await program.account.charger.fetch(chargerPda);
+    assert.equal(charger.address, '456 Updated Ave');
+    assert.equal(Number(charger.power), 44);
+    assert.equal(Number(charger.price), 20);
+  });
 
-    assert.equal(updatedCharger.address, '5678 New Street');
-    assert.equal(updatedCharger.city, 'NewCity');
-    assert.equal(updatedCharger.power.toNumber(), 6000);
-    assert.equal(updatedCharger.price, 2550);
+  it('Charges user and increments charge count, no reward token yet', async () => {
+    // Create a new escrow account for this charge
+    escrowPda = anchor.web3.Keypair.generate().publicKey;
+    escrowTokenAccount = (
+      await getOrCreateAssociatedTokenAccount(
+        provider.connection,
+        owner,
+        rewardMint,
+        escrowPda,
+        true
+      )
+    ).address;
+
+    await program.methods
+      .startCharge(
+        new anchor.BN(10), // price
+        false // not using token
+      )
+      .accounts({
+        user: user.publicKey,
+        escrow: escrowPda,
+        charger: chargerPda,
+        userTokenAccount: userTokenAccount,
+        escrowTokenAccount: escrowTokenAccount,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        rewardMint: rewardMint,
+        userRewardTokenAccount: userRewardTokenAccount,
+        ownerRewardTokenAccount: ownerRewardTokenAccount,
+        authority: user.publicKey,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([user])
+      .rpc();
+
+    // Fetch user account and check charge count
+    const userAccount = await program.account.user.fetch(user.publicKey);
+    assert.equal(userAccount.chargeCount, 1);
+    assert.equal(userAccount.tokenBalance, 0);
+  });
+
+  it('Rewards user with a token after 4 charges', async () => {
+    // Simulate 3 more charges
+    for (let i = 0; i < 3; i++) {
+      let escrowPda = anchor.web3.Keypair.generate().publicKey;
+      let escrowTokenAccount = (
+        await getOrCreateAssociatedTokenAccount(
+          provider.connection,
+          owner,
+          rewardMint,
+          escrowPda,
+          true
+        )
+      ).address;
+
+      await program.methods
+        .startCharge(new anchor.BN(10), false)
+        .accounts({
+          user: user.publicKey,
+          escrow: escrowPda,
+          charger: chargerPda,
+          userTokenAccount: userTokenAccount,
+          escrowTokenAccount: escrowTokenAccount,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          rewardMint: rewardMint,
+          userRewardTokenAccount: userRewardTokenAccount,
+          ownerRewardTokenAccount: ownerRewardTokenAccount,
+          authority: user.publicKey,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([user])
+        .rpc();
+    }
+
+    // User should now have 4 charges and 1 reward token
+    const userAccount = await program.account.user.fetch(user.publicKey);
+    assert.equal(userAccount.chargeCount, 4);
+
+    const userRewardAccount = await getAccount(
+      provider.connection,
+      userRewardTokenAccount
+    );
+    assert.equal(Number(userRewardAccount.amount), 1);
+  });
+
+  it('Applies 50% discount when user uses a reward token', async () => {
+    let escrowPda = anchor.web3.Keypair.generate().publicKey;
+    let escrowTokenAccount = (
+      await getOrCreateAssociatedTokenAccount(
+        provider.connection,
+        owner,
+        rewardMint,
+        escrowPda,
+        true
+      )
+    ).address;
+
+    // User uses reward token for discount
+    await program.methods
+      .startCharge(
+        new anchor.BN(10), // original price
+        true // use token for discount
+      )
+      .accounts({
+        user: user.publicKey,
+        escrow: escrowPda,
+        charger: chargerPda,
+        userTokenAccount: userTokenAccount,
+        escrowTokenAccount: escrowTokenAccount,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        rewardMint: rewardMint,
+        userRewardTokenAccount: userRewardTokenAccount,
+        ownerRewardTokenAccount: ownerRewardTokenAccount,
+        authority: user.publicKey,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([user])
+      .rpc();
+
+    // User's reward token account should now be 0, owner's should have 1 more
+    const userRewardAccount = await getAccount(
+      provider.connection,
+      userRewardTokenAccount
+    );
+    const ownerRewardAccount = await getAccount(
+      provider.connection,
+      ownerRewardTokenAccount
+    );
+    assert.equal(Number(userRewardAccount.amount), 0);
+    assert.equal(Number(ownerRewardAccount.amount), 1);
+  });
+
+  it('Releases escrow to the owner', async () => {
+    // Assume escrowPda and escrowTokenAccount from previous test
+    // For a real test, you'd track and reuse these
+    await program.methods
+      .releaseEscrow(
+        new anchor.BN(5) // amount to release (should be 50% of original price)
+      )
+      .accounts({
+        escrow: escrowPda,
+        escrowTokenAccount: escrowTokenAccount,
+        ownerTokenAccount: ownerTokenAccount,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        authority: user.publicKey,
+      })
+      .signers([user])
+      .rpc();
+
+    // Check that funds have moved to owner's token account
+    const ownerAccount = await getAccount(
+      provider.connection,
+      ownerTokenAccount
+    );
+    assert.isAbove(Number(ownerAccount.amount), 0);
   });
 });

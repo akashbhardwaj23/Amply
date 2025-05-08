@@ -72,7 +72,8 @@ pub mod ev_charging {
         Ok(())
     }
 
-    pub fn start_charge(ctx: Context<StartCharge>, mut amount: u64, use_token: bool) -> Result<()> {
+    pub fn start_charge(ctx: Context<StartCharge>, amount: u64, use_token: bool) -> Result<()> {
+        let mut amount = amount;
         let user_token_acc = &ctx.accounts.user_reward_token_account;
         let owner_token_acc = &ctx.accounts.owner_reward_token_account;
 
@@ -100,16 +101,22 @@ pub mod ev_charging {
             token::transfer(ctx.accounts.into_transfer_to_escrow_context(), amount)?;
         }
 
-        // Update user charge count
-        let user = &mut ctx.accounts.user;
-        user.charge_count += 1;
-
-        // Reward token if charged more than 3 times and not using token this time
-        if user.charge_count > 3 && !use_token {
+        // If user is eligible for a reward token and not using token this time, mint before mutably borrowing user
+        if {
+            // We need to check the charge count before incrementing it, so temporarily borrow user as immutable
+            let user = &ctx.accounts.user;
+            user.charge_count > 3 && !use_token
+        } {
             token::mint_to(
                 ctx.accounts.into_mint_to_user_context(),
                 1, // Mint 1 token as reward
             )?;
+        }
+
+        // Now mutably borrow user and update fields
+        let user = &mut ctx.accounts.user;
+        user.charge_count += 1;
+        if user.charge_count > 3 && !use_token {
             user.token_balance += 1;
         }
 
