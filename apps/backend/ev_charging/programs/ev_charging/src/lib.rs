@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, MintTo, Token, TokenAccount, Transfer};
 
-declare_id!("Fp3LQifUv4BJ5KrpUb1fpWA9Krs9ryNHagFW9H8bVUDP");
+declare_id!("GtyfWTKPqd8V8zqid5nfJKa79DivNkNz7NyXsUKCPjSF");
 
 #[program]
 pub mod ev_charging {

@@ -6,7 +6,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-ev_charging = "Fp3LQifUv4BJ5KrpUb1fpWA9Krs9ryNHagFW9H8bVUDP"
+ev_charging = "GtyfWTKPqd8V8zqid5nfJKa79DivNkNz7NyXsUKCPjSF"
 
 [workspace]
 types = "apps/backend/ev_charging/target/types"
@@ -16,8 +16,8 @@ types = "apps/backend/ev_charging/target/types"
 url = "https://api.apr.dev"
 
 [provider]
-# cluster = "localnet"
-cluster = "https://api.devnet.solana.com"
+cluster = "localnet"
+# cluster = "https://api.devnet.solana.com"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
