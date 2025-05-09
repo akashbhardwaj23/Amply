@@ -66,6 +66,7 @@ describe('ev_charging', () => {
   // User PDA for program-owned user account
   let userPda: PublicKey;
   let userBump: number;
+   const tokenValueInLamports = new BN(250_000_000); 
 
   const chargerName = 'SuperFastCharger';
 
@@ -353,7 +354,9 @@ describe('ev_charging', () => {
   assert.equal(finalUserTokens.toString(), initialUserTokens.toString(), "User's reward token balance should not change");
   assert.equal(finalOwnerTokens.toString(), initialOwnerTokens.toString(), "Owner's reward token balance should not change");
   });
+
   
+
   it('Rewards user with a token after 4 charges', async () => {
     // Simulate 3 more charges
     for (let i = 0; i < 3; i++) {
@@ -401,8 +404,6 @@ describe('ev_charging', () => {
     console.log("User reward token balance:", userRewardAccount.amount.toString());
     assert.isAbove(Number(userRewardAccount.amount), 0, "User should have reward tokens");
   });
-
- 
 
   it('Applies 25% discount when using a reward token', async () => {
     // Ensure the user has at least one reward token by checking balance
@@ -492,6 +493,104 @@ describe('ev_charging', () => {
     );
   });
 
+  it("Pays full SOL when tokens_used = 0", async () => {
+    const totalPrice = new BN(4 * anchor.web3.LAMPORTS_PER_SOL);
+    const tokensUsed = new BN(0);
+
+    const userSolBefore = await provider.connection.getBalance(user.publicKey);
+    const userTokensBefore = (await getAccount(provider.connection, userRewardTokenAccount)).amount;
+    const ownerTokensBefore = (await getAccount(provider.connection, ownerRewardTokenAccount)).amount;
+
+    await program.methods
+      .startCharge(totalPrice, tokensUsed, tokenValueInLamports)
+      .accounts({
+        user: user.publicKey,
+        owner: owner.publicKey,
+        userRewardTokenAccount,
+        ownerRewardTokenAccount,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        // add other required accounts: escrow, charger, systemProgram, mintAuthority, etc.
+      })
+      .signers([user])
+      .rpc();
+
+    const userSolAfter = await provider.connection.getBalance(user.publicKey);
+    const userTokensAfter = (await getAccount(provider.connection, userRewardTokenAccount)).amount;
+    const ownerTokensAfter = (await getAccount(provider.connection, ownerRewardTokenAccount)).amount;
+
+    // User SOL decreased by approximately totalPrice (minus fees)
+    assert.isBelow(userSolAfter, userSolBefore.sub(totalPrice).toNumber() + 10000);
+
+    // Tokens unchanged
+    assert.equal(userTokensAfter.toString(), userTokensBefore.toString());
+    assert.equal(ownerTokensAfter.toString(), ownerTokensBefore.toString());
+  });
+
+  it("Pays full tokens when tokens_used = totalPrice / tokenValue", async () => {
+    const totalPrice = new BN(4 * anchor.web3.LAMPORTS_PER_SOL);
+    const tokensUsed = new BN(16); // 16 tokens * 0.25 SOL = 4 SOL
+
+    // Mint extra tokens to user for this test
+    await mintTo(provider.connection, owner, rewardMint, userRewardTokenAccount, owner, 20);
+
+    const userTokensBefore = (await getAccount(provider.connection, userRewardTokenAccount)).amount;
+    const ownerTokensBefore = (await getAccount(provider.connection, ownerRewardTokenAccount)).amount;
+
+    await program.methods
+      .startCharge(totalPrice, tokensUsed, tokenValueInLamports)
+      .accounts({
+        user: user.publicKey,
+        owner: owner.publicKey,
+        userRewardTokenAccount,
+        ownerRewardTokenAccount,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        // add other required accounts
+      })
+      .signers([user])
+      .rpc();
+
+    const userTokensAfter = (await getAccount(provider.connection, userRewardTokenAccount)).amount;
+    const ownerTokensAfter = (await getAccount(provider.connection, ownerRewardTokenAccount)).amount;
+
+    // Tokens decreased by tokensUsed
+    assert.equal(userTokensBefore.sub(userTokensAfter).toString(), tokensUsed.toString());
+    assert.equal(ownerTokensAfter.sub(ownerTokensBefore).toString(), tokensUsed.toString());
+  });
+
+  it("Pays partial tokens + SOL", async () => {
+    const totalPrice = new BN(4 * anchor.web3.LAMPORTS_PER_SOL);
+    const tokensUsed = new BN(4); // 4 tokens * 0.25 = 1 SOL discount
+
+    const userSolBefore = await provider.connection.getBalance(user.publicKey);
+    const userTokensBefore = (await getAccount(provider.connection, userRewardTokenAccount)).amount;
+    const ownerTokensBefore = (await getAccount(provider.connection, ownerRewardTokenAccount)).amount;
+
+    await program.methods
+      .startCharge(totalPrice, tokensUsed, tokenValueInLamports)
+      .accounts({
+        user: user.publicKey,
+        owner: owner.publicKey,
+        userRewardTokenAccount,
+        ownerRewardTokenAccount,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        // add other required accounts
+      })
+      .signers([user])
+      .rpc();
+
+    const userSolAfter = await provider.connection.getBalance(user.publicKey);
+    const userTokensAfter = (await getAccount(provider.connection, userRewardTokenAccount)).amount;
+    const ownerTokensAfter = (await getAccount(provider.connection, ownerRewardTokenAccount)).amount;
+
+    // SOL spent should be totalPrice - tokensUsed * tokenValueInLamports
+    const expectedSolSpent = totalPrice.sub(tokensUsed.mul(tokenValueInLamports));
+    assert.isAtLeast(userSolBefore.sub(userSolAfter).toNumber(), expectedSolSpent.toNumber());
+
+    // Tokens decreased by tokensUsed
+    assert.equal(userTokensBefore.sub(userTokensAfter).toString(), tokensUsed.toString());
+    assert.equal(ownerTokensAfter.sub(ownerTokensBefore).toString(), tokensUsed.toString());
+  });
+  
   it('Releases escrow to the owner using SOL', async () => {
     // Create a new escrow account for this test specifically
     const escrow = anchor.web3.Keypair.generate();
