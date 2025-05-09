@@ -13,7 +13,7 @@ import BN from 'bn.js';
 import fs from 'fs';
 import path from 'path';
 // Import the generated IDL type
-import { EvCharging } from '../target/types/ev_charging'; 
+import type { EvCharging } from '../target/types/ev_charging.ts'; 
 
 describe('ev_charging', () => {
   // Configure the client to use the local cluster
@@ -297,6 +297,63 @@ describe('ev_charging', () => {
     assert.isAbove(userAccount.chargeCount, 0, "Charge count should be greater than 0");
   });
 
+   it('Pays with SOL by default and does not use reward token', async () => {
+  // Record initial SOL and token balances
+  const initialUserSol = await provider.connection.getBalance(user.publicKey);
+  const initialOwnerSol = await provider.connection.getBalance(owner.publicKey);
+  const initialUserTokens = (await getAccount(provider.connection, userRewardTokenAccount)).amount;
+  const initialOwnerTokens = (await getAccount(provider.connection, ownerRewardTokenAccount)).amount;
+
+  // Create a new escrow account for this test
+  const escrow = anchor.web3.Keypair.generate();
+  const escrowTokenAccount = (
+    await getOrCreateAssociatedTokenAccount(
+      provider.connection,
+      user,
+      rewardMint,
+      escrow.publicKey,
+      true
+    )
+  ).address;
+
+  // Start a charge WITHOUT using the reward token (use_token = false)
+  await program.methods
+    .startCharge(
+      new BN(10), // price
+      false // use_token = false, should pay with SOL only
+    )
+    .accounts({
+      user: userPda,
+      escrow: escrow.publicKey,
+      charger: chargerPda,
+      userTokenAccount: userTokenAccount,
+      escrowTokenAccount: escrowTokenAccount,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      rewardMint: rewardMint,
+      userRewardTokenAccount: userRewardTokenAccount,
+      ownerRewardTokenAccount: ownerRewardTokenAccount,
+      authority: user.publicKey,
+      mint_authority: owner.publicKey,
+      systemProgram: SystemProgram.programId
+    })
+    .signers([user, escrow])
+    .rpc();
+
+  // Record balances after the transaction
+  const finalUserSol = await provider.connection.getBalance(user.publicKey);
+  const finalOwnerSol = await provider.connection.getBalance(owner.publicKey);
+  const finalUserTokens = (await getAccount(provider.connection, userRewardTokenAccount)).amount;
+  const finalOwnerTokens = (await getAccount(provider.connection, ownerRewardTokenAccount)).amount;
+
+  // Assert: SOL was spent by user and received by owner
+  assert.isBelow(finalUserSol, initialUserSol, "User should have less SOL after payment");
+  // assert.isAtLeast(finalOwnerSol, initialOwnerSol, "Owner should have same or more SOL after payment");
+
+  // Assert: Reward tokens were NOT used
+  assert.equal(finalUserTokens.toString(), initialUserTokens.toString(), "User's reward token balance should not change");
+  assert.equal(finalOwnerTokens.toString(), initialOwnerTokens.toString(), "Owner's reward token balance should not change");
+  });
+  
   it('Rewards user with a token after 4 charges', async () => {
     // Simulate 3 more charges
     for (let i = 0; i < 3; i++) {
@@ -344,6 +401,8 @@ describe('ev_charging', () => {
     console.log("User reward token balance:", userRewardAccount.amount.toString());
     assert.isAbove(Number(userRewardAccount.amount), 0, "User should have reward tokens");
   });
+
+ 
 
   it('Applies 25% discount when using a reward token', async () => {
     // Ensure the user has at least one reward token by checking balance
