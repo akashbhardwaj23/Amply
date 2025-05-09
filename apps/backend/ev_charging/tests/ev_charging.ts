@@ -67,7 +67,9 @@ describe('ev_charging', () => {
   let userPda: PublicKey;
   let userBump: number;
 
-  const chargerName = 'SuperFastCharger';
+  // Use timestamp to ensure a unique charger name for each test run
+  const timestamp = new Date().getTime();
+  const chargerName = `SuperFastCharger_${timestamp}`;
 
   before(async () => {
     // Airdrop SOL to user and owner and confirm
@@ -140,7 +142,7 @@ describe('ev_charging', () => {
       100 // arbitrary amount
     );
 
-    // Derive charger PDA
+    // Derive charger PDA with our unique name
     [chargerPda, chargerBump] = await PublicKey.findProgramAddressSync(
       [Buffer.from(chargerName)],
       program.programId
@@ -158,79 +160,61 @@ describe('ev_charging', () => {
   });
 
   it('Creates a new charger account', async () => {
-    try {
-      await program.methods
-        .createCharger(
-          chargerName,
-          '123 Main St',
-          'Metropolis',
-          'State',
-          '12345',
-          'Fastest charger in town',
-          'Type2',
-          new BN(22),
-          new BN(10),
-          'CCS'
-        )
-        .accounts({
-          charger: chargerPda,
-          payer: owner.publicKey,
-          systemProgram: SystemProgram.programId
-        })
-        .signers([owner])
-        .rpc();
-    } catch (err) {
-      // If the account already exists, we can continue
-      if (!err.toString().includes("already in use")) {
-        throw err;
-      }
-      console.log("Charger account already exists, continuing with tests");
-    }
+    // This will always create a new account because we're using a timestamp in the name
+    await program.methods
+      .createCharger(
+        chargerName,
+        '123 Main St',
+        'Metropolis',
+        'State',
+        '12345',
+        'Fastest charger in town',
+        'Type2',
+        new BN(22),
+        new BN(10),
+        'CCS'
+      )
+      .accounts({
+        charger: chargerPda,
+        payer: owner.publicKey,
+        systemProgram: SystemProgram.programId
+      })
+      .signers([owner])
+      .rpc();
 
     const charger = await program.account.charger.fetch(chargerPda);
     assert.equal(charger.name, chargerName);
-    // We'll skip the owner check since it may have been created by a different key
+    assert.equal(charger.owner.toBase58(), owner.publicKey.toBase58(), "Charger owner should match test wallet");
+    console.log("Successfully created new charger account with name:", chargerName);
   });
 
   it('Updates the charger account', async () => {
-    try {
-      // First get the current owner
-      const charger = await program.account.charger.fetch(chargerPda);
-      const currentOwner = charger.owner;
-      
-      // Use the owner's keypair for signing if it's our owner, otherwise use a throw-away operation
-      const signerKeypair = currentOwner.equals(owner.publicKey) ? owner : anchor.web3.Keypair.generate();
-      
-      if (!currentOwner.equals(owner.publicKey)) {
-        console.log("Current charger owner doesn't match our test keypair, skipping update test");
-        return; // Skip the test if we can't update
-      }
+    // We're now certain this was created with our wallet, so update will work
+    await program.methods
+      .updateCharger(
+        chargerName, // keep the same name
+        '456 Updated Ave',
+        'Gotham',
+        'UpdatedState',
+        '54321',
+        'Now even faster!',
+        'Type2',
+        new BN(44),
+        new BN(20),
+        'CCS'
+      )
+      .accounts({
+        charger: chargerPda,
+        owner: owner.publicKey
+      })
+      .signers([owner])
+      .rpc();
 
-      await program.methods
-        .updateCharger(
-          chargerName,
-          '456 Updated Ave',
-          'Gotham',
-          'UpdatedState',
-          '54321',
-          'Now even faster!',
-          'Type2',
-          new BN(44),
-          new BN(20),
-          'CCS'
-        )
-        .accounts({
-          charger: chargerPda,
-          owner: signerKeypair.publicKey
-        })
-        .signers([signerKeypair])
-        .rpc();
-
-      const updatedCharger = await program.account.charger.fetch(chargerPda);
-      assert.equal(updatedCharger.address, '456 Updated Ave');
-    } catch (err) {
-      console.log("Update charger test failed, but continuing:", err.message);
-    }
+    const updatedCharger = await program.account.charger.fetch(chargerPda);
+    assert.equal(updatedCharger.address, '456 Updated Ave');
+    assert.equal(updatedCharger.city, 'Gotham');
+    assert.equal(updatedCharger.price.toNumber(), 20);
+    console.log("Successfully updated charger account");
   });
 
   it('Initializes a user account', async () => {
@@ -409,9 +393,9 @@ describe('ev_charging', () => {
       .signers([user, escrow])
       .rpc();
     
-    // Verify escrow was created with half the normal price (discount applied)
+    // Verify escrow was created with 75% of the normal price (25% discount applied)
     const escrowAccount = await program.account.escrow.fetch(escrow.publicKey);
-    assert.equal(escrowAccount.amount.toNumber(), 7, "Escrow amount should be reduced by 25%");
+    assert.equal(escrowAccount.amount.toNumber(), 7, "Escrow amount should be reduced by 25% (to 75% of original price)");
     
     // Verify the token was transferred from user to owner
     const finalUserTokens = (await getAccount(provider.connection, userRewardTokenAccount)).amount;
@@ -431,11 +415,15 @@ describe('ev_charging', () => {
       Number(initialOwnerTokens), 
       "Owner should have more tokens after user applies discount"
     );
+    
+    console.log("Successfully verified 25% discount when using a reward token");
   });
 
   it('Releases escrow to the owner using SOL', async () => {
     // Create a new escrow account for this test specifically
     const escrow = anchor.web3.Keypair.generate();
+    
+    console.log("=== DEMONSTRATING SOL PAYMENT FOR CHARGING ===");
     
     // Airdrop additional SOL to the user before starting
     try {
@@ -444,14 +432,14 @@ describe('ev_charging', () => {
         5 * anchor.web3.LAMPORTS_PER_SOL // Airdrop additional 5 SOL
       );
       await provider.connection.confirmTransaction(sig, "confirmed");
-      console.log("Successfully airdropped additional SOL to user for testing");
+      console.log("✓ Successfully airdropped additional SOL to user for testing");
     } catch (err) {
       console.log("Airdrop failed, proceeding with reduced payment amount:", err.message);
     }
     
     // Check user's current balance to determine a safe payment amount
     const userBalance = await provider.connection.getBalance(user.publicKey);
-    console.log("User's SOL balance before charge:", userBalance / anchor.web3.LAMPORTS_PER_SOL, "SOL");
+    console.log("✓ User's SOL balance before charge:", userBalance / anchor.web3.LAMPORTS_PER_SOL, "SOL");
     
     // Use a smaller amount than the initial user balance, accounting for rent and fees
     // Either 1 SOL or 90% of available balance, whichever is smaller
@@ -459,13 +447,17 @@ describe('ev_charging', () => {
       1 * anchor.web3.LAMPORTS_PER_SOL, 
       Math.floor(userBalance * 0.9) // Use 90% of available balance
     ));
+    console.log("✓ Setting payment amount to:", paymentAmount.toNumber() / anchor.web3.LAMPORTS_PER_SOL, "SOL");
     
     // First get the charger account to identify its owner
     const chargerAccount = await program.account.charger.fetch(chargerPda);
-    console.log("Charger owner:", chargerAccount.owner.toBase58());
+    console.log("✓ Charger owner:", chargerAccount.owner.toBase58());
     
     // Keep track of charger owner's initial SOL balance (not the test's owner variable)
     const chargerOwnerBalanceBefore = await provider.connection.getBalance(chargerAccount.owner);
+    console.log("✓ Charger owner's initial balance:", chargerOwnerBalanceBefore / anchor.web3.LAMPORTS_PER_SOL, "SOL");
+    
+    console.log("✓ Starting charging session...");
     
     // Initialize the escrow account with SOL payment
     await program.methods
@@ -488,22 +480,23 @@ describe('ev_charging', () => {
       .signers([user, escrow])
       .rpc();
     
+    console.log("✓ Charging started successfully!");
+    
     // Verify the escrow was initialized properly
     const escrowAccount = await program.account.escrow.fetch(escrow.publicKey);
     assert.equal(escrowAccount.user.toBase58(), userPda.toBase58());
     assert.equal(escrowAccount.amount.toString(), paymentAmount.toString());
     assert.equal(escrowAccount.isReleased, false);
     
-    // Log the owner and user of the escrow for clarity
-    console.log("Escrow user:", escrowAccount.user.toBase58());
-    console.log("Escrow owner:", escrowAccount.owner.toBase58());
-    console.log("Test owner public key:", owner.publicKey.toBase58());
-    console.log("User public key:", user.publicKey.toBase58());
-    console.log("User PDA:", userPda.toBase58());
+    console.log("✓ Escrow account verified - holds", 
+      escrowAccount.amount.toNumber() / anchor.web3.LAMPORTS_PER_SOL, 
+      "SOL for the charging session");
     
     // Verify the escrow owner matches the charger owner
     assert.equal(escrowAccount.owner.toBase58(), chargerAccount.owner.toBase58(), 
       "Escrow owner should match charger owner");
+    
+    console.log("✓ Charging session complete, releasing funds to owner...");
     
     // Now release the escrow to the owner (transfer SOL)
     // The user releases the escrow using their keypair (authority)
@@ -521,6 +514,8 @@ describe('ev_charging', () => {
       .signers([user])
       .rpc();
 
+    console.log("✓ Funds released successfully!");
+    
     // Check that charger owner's SOL balance has increased
     const chargerOwnerBalanceAfter = await provider.connection.getBalance(chargerAccount.owner);
     assert.isAbove(
@@ -528,9 +523,9 @@ describe('ev_charging', () => {
       chargerOwnerBalanceBefore,
       "Charger owner should have more SOL after release"
     );
-    console.log("Charger owner SOL balance increase:", 
-      (chargerOwnerBalanceAfter - chargerOwnerBalanceBefore) / anchor.web3.LAMPORTS_PER_SOL, 
-      "SOL"
-    );
+    
+    const solIncrease = (chargerOwnerBalanceAfter - chargerOwnerBalanceBefore) / anchor.web3.LAMPORTS_PER_SOL;
+    console.log("✓ PAYMENT COMPLETE: Charger owner received", solIncrease, "SOL");
+    console.log("=== SOL PAYMENT DEMONSTRATION SUCCESSFUL ===");
   });
 });
