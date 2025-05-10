@@ -43,6 +43,7 @@ import BN from "bn.js";
 import idl from "@/idl/ev_charging.json"; // <-- adjust path if needed
 import { Map, MapRef, Marker, MapLayerMouseEvent } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { Label } from "@/components/ui/label";
 
 // const programId = new web3.PublicKey(
 //   'CbhmEH9wJTGShWpyHebvj15DXFJu7TkMK7pXydc9qoQ1'
@@ -179,9 +180,9 @@ export default function RegisterStationPage() {
       // alert("Transaction failed: " + (err.message || err));
       toast({
         variant: "destructive",
-        title : "Transaction Failed To Execute",
-        description: err.message || err
-      })
+        title: "Transaction Failed To Execute",
+        description: err.message || err,
+      });
     }
   }
 
@@ -432,48 +433,67 @@ export default function RegisterStationPage() {
                     Provide Location information about your charging station
                   </CardDescription>
                 </CardHeader>
-                
-                  <div className="bg-muted rounded-lg overflow-hidden h-[600px] mb-4">
-                    <div className="relative h-full w-full bg-gray-100 dark:bg-gray-800">
-                      <Map
-                        initialViewState={{
-                          ...viewPort,
-                          zoom: 14,
-                        }}
-                        interactive
-                        id="mapStation"
-                        onDblClick={(e) => handleDoubleClick(e)}
-                        ref={myMapRef}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          position: "absolute",
-                          zIndex: 10,
-                        }}
-                        mapStyle="https://tiles.openfreemap.org/styles/liberty"
-                      >
-                        <Marker
-                          longitude={viewPort.longitude}
-                          latitude={viewPort.latitude}>
-                          <MapPin className={`w-8 h-8 text-red-600`} />
-                        </Marker>
-                      </Map>
-                    </div>
-                  </div>
 
-
-                  <div className="flex justify-between p-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setStep(1)}
+                <div className="bg-muted rounded-lg overflow-hidden h-[600px] mb-4">
+                  <div className="relative h-full w-full bg-gray-100 dark:bg-gray-800">
+                    <Map
+                      initialViewState={{
+                        ...viewPort,
+                        zoom: 14,
+                      }}
+                      interactive
+                      id="mapStation"
+                      onDblClick={(e) => handleDoubleClick(e)}
+                      ref={myMapRef}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        position: "absolute",
+                        zIndex: 10,
+                      }}
+                      mapStyle="https://tiles.openfreemap.org/styles/liberty"
                     >
-                      Back
-                    </Button>
-                    <Button type="button" onClick={() => setStep(3)}>
-                      Continue
-                    </Button>
+                      <Marker
+                        longitude={viewPort.longitude}
+                        latitude={viewPort.latitude}
+                      >
+                        <MapPin className={`w-8 h-8 text-red-600`} />
+                      </Marker>
+                    </Map>
                   </div>
+                </div>
+
+                <div className="flex justify-between p-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setStep(1)}
+                  >
+                    Back
+                  </Button>
+
+                  {viewPort && (
+                    <div className="flex justify-between items-center gap-4 text-sm">
+                      <div className="flex flex-col justify-center items-center gap-2">
+                       
+                        <span className="px-4 py-2 bg-primary rounded-lg">
+                          {viewPort.longitude}
+                        </span>
+                        <Label>Logitude</Label>
+                      </div>
+                      <div className="flex flex-col justify-center items-center gap-2">
+                        <span className="px-4 py-2 bg-primary rounded-lg">
+                          {viewPort.latitude}
+                        </span>
+
+                        <Label>Latitude</Label>
+                      </div>
+                    </div>
+                  )}
+                  <Button type="button" onClick={() => setStep(3)}>
+                    Continue
+                  </Button>
+                </div>
               </Card>
             )}
             {step === 3 && (

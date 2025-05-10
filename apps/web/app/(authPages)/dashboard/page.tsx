@@ -6,7 +6,6 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { getUser } from "@civic/auth-web3/nextjs";
-import { useUser } from "@civic/auth-web3/react";
 import { Battery, Calendar, ChartCandlestick, Clock, CreditCard, History, MapPin, PlugZap, Zap } from "lucide-react";
 import Link from "next/link"
 
