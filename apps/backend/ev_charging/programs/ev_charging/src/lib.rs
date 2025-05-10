@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::{program::invoke, system_instruction};
 use anchor_spl::token::{self, Mint, MintTo, Token, TokenAccount};
 
-declare_id!("FxdNFv8Avc2pXzFqiaJDwnda61u8tFfDvE4esAhG3RDg");
+declare_id!("BzyxNcedD9nnqVD34p2maBDEWfrvn6s618zreFQwrPyJ");
 
 #[program]
 pub mod ev_charging {
@@ -81,35 +81,19 @@ pub mod ev_charging {
         Ok(())
     }
 
-    pub fn start_charge(
-        ctx: Context<StartCharge>,
-        amount: u64,                  // Total price in lamports
-        tokens_used: u64,             // Number of tokens user wants to spend
-        token_value_in_lamports: u64, // Value of one token in lamports (e.g., 0.25 SOL = 250_000_000)
-    ) -> Result<()> {
+    pub fn start_charge(ctx: Context<StartCharge>, amount: u64, use_token: bool) -> Result<()> {
+        let mut amount_in_lamports = amount;
         let user_token_acc = &ctx.accounts.user_reward_token_account;
         let owner_token_acc = &ctx.accounts.owner_reward_token_account;
 
-        // Calculate total discount from tokens
-        let discount = tokens_used
-            .checked_mul(token_value_in_lamports)
-            .ok_or(CustomError::Overflow)?;
-        require!(discount <= amount, CustomError::InvalidDiscount);
+        // If user chooses to use a token and has at least 1, apply 50% discount
+        if use_token {
+            require!(user_token_acc.amount >= 1, CustomError::NotEnoughTokens);
 
-        // Calculate remaining SOL amount after discount
-        let amount_in_lamports = amount.checked_sub(discount).ok_or(CustomError::Underflow)?;
+            // Reduce fee by 25%
+            amount_in_lamports = amount_in_lamports * 75 / 100;
 
-        msg!("Tokens used: {}", tokens_used);
-        msg!("Token discount (lamports): {}", discount);
-        msg!("SOL to pay (lamports): {}", amount_in_lamports);
-
-        // If tokens_used > 0, transfer tokens from user to owner
-        if tokens_used > 0 {
-            require!(
-                user_token_acc.amount >= tokens_used,
-                CustomError::NotEnoughTokens
-            );
-
+            // Transfer 1 reward token from user to owner
             let cpi_ctx = CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
                 anchor_spl::token::Transfer {
@@ -118,11 +102,12 @@ pub mod ev_charging {
                     authority: ctx.accounts.authority.to_account_info(),
                 },
             );
-            anchor_spl::token::transfer(cpi_ctx, tokens_used)?;
+            anchor_spl::token::transfer(cpi_ctx, 1)?;
         }
 
-        // Transfer SOL from user to escrow (if amount_in_lamports > 0)
+        // Transfer SOL from user to escrow (if amount > 0)
         if amount_in_lamports > 0 {
+            // Transfer SOL from user to the escrow PDA
             invoke(
                 &system_instruction::transfer(
                     &ctx.accounts.authority.key(),
@@ -137,21 +122,23 @@ pub mod ev_charging {
             )?;
         }
 
-        // Mint reward token if eligible and user used no tokens this time
+        // If user is eligible for a reward token and not using token this time, mint before mutably borrowing user
         if {
+            // We need to check the charge count before incrementing it, so temporarily borrow user as immutable
             let user = &ctx.accounts.user;
-            user.charge_count >= 3 && tokens_used == 0
+            user.charge_count >= 3 && !use_token
         } {
+            // Use the mint authority (owner) to sign for minting tokens
             token::mint_to(
                 ctx.accounts.into_mint_to_user_context(),
                 1, // Mint 1 token as reward
             )?;
         }
 
-        // Update user state
+        // Now mutably borrow user and update fields
         let user = &mut ctx.accounts.user;
         user.charge_count += 1;
-        if user.charge_count >= 4 && tokens_used == 0 {
+        if user.charge_count >= 4 && !use_token {
             user.token_balance += 1;
         }
 
@@ -229,17 +216,14 @@ pub struct UpdateCharger<'info> {
 pub struct StartCharge<'info> {
     #[account(mut)]
     pub user: Account<'info, User>,
-
     #[account(init, payer = authority, space = 8 + Escrow::MAX_SIZE)]
     pub escrow: Account<'info, Escrow>,
-
     #[account(mut)]
     pub charger: Account<'info, Charger>,
 
-    // Token accounts for reward tokens
+    // Still need token accounts for reward tokens
     #[account(mut)]
     pub user_reward_token_account: Account<'info, TokenAccount>,
-
     #[account(mut)]
     pub owner_reward_token_account: Account<'info, TokenAccount>,
 
@@ -360,22 +344,10 @@ impl Escrow {
 pub enum CustomError {
     #[msg("You are not authorized to update this charger.")]
     Unauthorized,
-
     #[msg("Not enough reward tokens.")]
     NotEnoughTokens,
-
     #[msg("Escrow has already been released.")]
     EscrowAlreadyReleased,
-
     #[msg("Insufficient funds in the escrow account.")]
     InsufficientFunds,
-
-    #[msg("Arithmetic overflow occurred")]
-    Overflow,
-
-    #[msg("Invalid discount amount")]
-    InvalidDiscount,
-
-    #[msg("Arithmetic underflow occurred")]
-    Underflow,
 }
