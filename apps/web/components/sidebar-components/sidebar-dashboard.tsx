@@ -24,7 +24,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { SideBarUser } from "@/components/sidebar-components/side-bar-user";
 import { cn } from "@/lib/utils";
-import { usePathname } from "next/navigation";
+import { redirect, usePathname } from "next/navigation";
 import Link from "next/link";
 
 // Menu items.
@@ -56,9 +56,13 @@ const items = [
   },
 ];
 
-export default function SidebarComponent() {
+export default function SidebarComponent({
+  user
+} : {
+  user : any
+}) {
   const pathname = usePathname();
-
+  
   return (
     <Sidebar collapsible="icon">
       <SidebarContent className="text-foreground dark:text-white mt-4">
@@ -96,9 +100,9 @@ export default function SidebarComponent() {
       <SidebarFooter>
         <SideBarUser
           user={{
-            name: "John Doe",
-            email: "jogn@gmail.com",
-            avatar: "",
+            name: user.name || "jhon",
+            email: user.email || "jhon@gmail.com",
+            avatar: user.picture || "",
           }}
         />
       </SidebarFooter>

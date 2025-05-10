@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
-import { Upload, Check, MapPin } from "lucide-react";
+import { Check, MapPin } from "lucide-react";
 
 // --- Anchor/Solana Imports ---
 import {
@@ -176,7 +176,12 @@ export default function RegisterStationPage() {
       router.push("/register-station/success");
     } catch (err: any) {
       console.error(err);
-      alert("Transaction failed: " + (err.message || err));
+      // alert("Transaction failed: " + (err.message || err));
+      toast({
+        variant: "destructive",
+        title : "Transaction Failed To Execute",
+        description: err.message || err
+      })
     }
   }
 
@@ -457,8 +462,15 @@ export default function RegisterStationPage() {
                   </div>
 
 
-                  <div className="flex justify-end">
-                    <Button type="button" onClick={() => setStep(2)}>
+                  <div className="flex justify-between p-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setStep(1)}
+                    >
+                      Back
+                    </Button>
+                    <Button type="button" onClick={() => setStep(3)}>
                       Continue
                     </Button>
                   </div>
@@ -588,11 +600,11 @@ export default function RegisterStationPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setStep(1)}
+                      onClick={() => setStep(2)}
                     >
                       Back
                     </Button>
-                    <Button type="button" onClick={() => setStep(3)}>
+                    <Button type="button" onClick={() => setStep(4)}>
                       Continue
                     </Button>
                   </div>
@@ -649,7 +661,7 @@ export default function RegisterStationPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setStep(2)}
+                      onClick={() => setStep(3)}
                     >
                       Back
                     </Button>
