@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::{program::invoke, system_instruction};
 use anchor_spl::token::{self, Mint, MintTo, Token, TokenAccount};
 
-declare_id!("BzyxNcedD9nnqVD34p2maBDEWfrvn6s618zreFQwrPyJ");
+declare_id!("3t62RkND3XUGD1K6hcETeQEDYwG3E45juB2qYprxpxXv");
 
 #[program]
 pub mod ev_charging {
@@ -83,8 +83,8 @@ pub mod ev_charging {
         charger.power = power;
         charger.price = price;
         charger.connector_types = connector_types;
-        charger.latitude = latitude; // Store new field
-        charger.longitude = longitude; // Store new field
+        charger.longitude = longitude; 
+        charger.latitude = latitude; 
 
         Ok(())
     }

@@ -13,7 +13,7 @@ import BN from 'bn.js';
 import fs from 'fs';
 import path from 'path';
 // Import the generated IDL type
-import { EvCharging } from '../target/types/ev_charging';
+import {  EvCharging } from '../target/types/ev_charging';
 
 describe('ev_charging', () => {
   // Configure the client to use the local cluster
