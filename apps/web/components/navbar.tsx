@@ -28,22 +28,20 @@ import {
 import {motion} from "motion/react"
 import { useUser } from "@civic/auth-web3/react";
 import { AvatarImage } from "@radix-ui/react-avatar"
+import { Loader } from "./ui/loader"
 
 export default function Navbar() {
-  const [isSignedIn, setIsSignedIn] = useState(false)
   const pathname = usePathname()
   const [voiceCommandOpen, setVoiceCommandOpen] = useState(false)
   const router = useRouter()
-  const {user, signIn, signOut} = useUser()
+  const {user, isLoading, signIn, signOut} = useUser()
 
   const handleSignIn = async() => {
     await signIn();
-    setIsSignedIn(true)
   }
 
   const handleSignOut = async () => {
     await signOut()
-    setIsSignedIn(false)
   }
 
   return (
@@ -126,7 +124,7 @@ export default function Navbar() {
             <Mic className="h-5 w-5" />
           </Button>
           <ModeToggle />
-          {user ? (
+          {user && !isLoading ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -145,9 +143,15 @@ export default function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button variant="default" onClick={handleSignIn}>
-              Sign In
-            </Button>
+           <>
+           {isLoading ? (
+            <Loader/>
+           ) : (
+             <Button variant="default" onClick={handleSignIn}>
+             Sign In
+           </Button>
+           )}
+           </>
           )}
         </div>
       </div>

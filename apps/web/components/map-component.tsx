@@ -4,8 +4,9 @@ import { RefObject, useCallback, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Navigation, MapPin, Zap } from 'lucide-react';
-import { Map, MapRef, Marker } from 'react-map-gl/maplibre';
+import { Layer, LayerProps, Map, MapRef, Marker, Source } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { NomanatomData } from '@/types/nomanatom';
 
 interface Station {
   id: string;
@@ -19,7 +20,15 @@ interface Station {
   lng: number;
 }
 
+interface boundingboxType {
+  minLon : number,
+  minLat : number,
+  maxLon : number,
+  maxLat : number
+}
+
 interface MapComponentProps {
+  city ? : NomanatomData
   mapRef : RefObject<MapRef | null>
   stations: Station[];
   selectedStation: string | null;
@@ -27,6 +36,7 @@ interface MapComponentProps {
 }
 
 export function MapComponent({
+  city,
   mapRef,
   stations,
   selectedStation,
@@ -55,6 +65,7 @@ export function MapComponent({
   );
 
 
+
   return (
     <div className="relative h-full w-full bg-gray-100 dark:bg-gray-800">
       <Map
@@ -74,6 +85,14 @@ export function MapComponent({
         }}
         mapStyle="https://tiles.openfreemap.org/styles/liberty"
       >
+
+      {city && (
+        <>
+       <MapComponentCityOutline city={city} />
+       </>
+      )}
+
+
         {stations.map((station) => (
           <Marker
             longitude={station.lng}
@@ -142,4 +161,71 @@ export function MapComponent({
       )}
     </div>
   );
+}
+
+
+
+function MapComponentCityOutline({
+  city
+}: {
+  city : NomanatomData
+}){
+
+
+    // "type": "Feature",
+  // "geometry": {
+  //   "type": "Polygon",
+  //   "coordinates": [
+  //     [
+  //       [-122.514426, 37.779280],
+  //       [-122.514426, 37.708075],
+  //       [-122.356981, 37.708075],
+  //       [-122.356981, 37.779280],
+  //       [-122.514426, 37.779280]
+  //     ]
+  //   ]
+  // },
+  // "properties": {
+  //   "name": "Sample City"
+  // }
+
+
+  if(!city){
+    return null
+  }
+
+
+  console.log(city)
+
+
+  // Create GeoJSON for the bounding box as a Polygon
+  const cityboundaries: GeoJSON.Feature<GeoJSON.Geometry> =  {
+    type: "Feature",
+    geometry: {
+      type: "Polygon",
+      coordinates: [[
+        [Number(city.boundingbox[0]), Number(city.boundingbox[1])], // Bottom-left
+        [Number(city.boundingbox[2]), Number(city.boundingbox[1])], // Bottom-right
+        [Number(city.boundingbox[2]), Number(city.boundingbox[3])], // Top-right
+        [Number(city.boundingbox[0]), Number(city.boundingbox[3])], // Top-left
+        [Number(city.boundingbox[0]), Number(city.boundingbox[1])]  // Close the polygon
+      ]]
+    },
+    properties: {
+      name: city.name
+    }
+  };
+
+  const layerStyle: LayerProps = {
+    id: "city-boundary",
+    type: "line",
+    paint: {
+      "line-color": "#ff0000",
+      "line-width": 3
+    }
+  };
+
+  return ( <Source id="bbox-source" type="geojson" data={cityboundaries!}>
+    <Layer {...layerStyle} />
+  </Source>)
 }

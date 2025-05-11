@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/use-toast';
-import { FieldErrors } from 'react-hook-form';
+import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/use-toast";
+import { FieldErrors } from "react-hook-form";
 
 import {
   Form,
@@ -17,19 +17,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Separator } from '@/components/ui/separator';
-import { Check, MapPin } from 'lucide-react';
+} from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Separator } from "@/components/ui/separator";
+import { Check, MapPin } from "lucide-react";
 
 // --- Anchor/Solana Imports ---
 import {
@@ -38,56 +38,58 @@ import {
   Program,
   setProvider,
   getProvider,
-} from '@coral-xyz/anchor';
-import BN from 'bn.js';
-import idl from '@/idl/ev_charging.json'; // <-- adjust path if needed
-import { Map, MapRef, Marker, MapLayerMouseEvent } from 'react-map-gl/maplibre';
-import 'maplibre-gl/dist/maplibre-gl.css';
-import { Label } from '@/components/ui/label';
+} from "@coral-xyz/anchor";
+import BN from "bn.js";
+import idl from "@/idl/ev_charging.json"; // <-- adjust path if needed
+import { Map, MapRef, Marker, MapLayerMouseEvent } from "react-map-gl/maplibre";
+import "maplibre-gl/dist/maplibre-gl.css";
+import { Label } from "@/components/ui/label";
+
+// const programId = new web3.PublicKey(
+//   'CbhmEH9wJTGShWpyHebvj15DXFJu7TkMK7pXydc9qoQ1'
+// ); // <-- replace with your deployed program ID
 
 const programId = new web3.PublicKey(idl.address);
 
-const network = 'https://api.devnet.solana.com'; // or localhost
+const network = "http://127.0.0.1:8899"; // or localhost
 
 const getPhantomProvider = (): PhantomProvider | undefined => {
-  if (typeof window !== 'undefined' && 'solana' in window) {
+  if (typeof window !== "undefined" && "solana" in window) {
     const provider = window.solana as PhantomProvider;
     if (provider.isPhantom) return provider;
   }
-  window.open('https://phantom.app/', '_blank');
+  window.open("https://phantom.app/", "_blank");
   return undefined;
 };
 
 const stationFormSchema = z.object({
   name: z
     .string()
-    .min(3, { message: 'Station name must be at least 3 characters.' }),
+    .min(3, { message: "Station name must be at least 3 characters." }),
   address: z
     .string()
-    .min(5, { message: 'Address must be at least 5 characters.' }),
-  city: z.string().min(2, { message: 'City is required.' }),
-  state: z.string().min(2, { message: 'State is required.' }),
-  zip: z.string().min(5, { message: 'ZIP code is required.' }),
+    .min(5, { message: "Address must be at least 5 characters." }),
+  city: z.string().min(2, { message: "City is required." }),
+  state: z.string().min(2, { message: "State is required." }),
+  zip: z.string().min(5, { message: "ZIP code is required." }),
   description: z.string().optional(),
-  chargerType: z.enum(['level1', 'level2', 'dcFast', 'other'], {
-    required_error: 'You need to select a charger type.',
+  chargerType: z.enum(["level1", "level2", "dcFast", "other"], {
+    required_error: "You need to select a charger type.",
   }),
-  power: z.coerce.number().min(1, { message: 'Power must be at least 1 kW.' }),
+  power: z.coerce.number().min(1, { message: "Power must be at least 1 kW." }),
   price: z.coerce
     .number()
-    .min(0.01, { message: 'Price must be at least 0.01 SOL.' }),
+    .min(0.01, { message: "Price must be at least 0.01 SOL." }),
   connectorTypes: z
     .string()
-    .min(1, { message: 'At least one connector type is required.' }),
-  latitude: z.coerce.number(),
-  longitude: z.coerce.number(),
+    .min(1, { message: "At least one connector type is required." }),
 });
 
 type StationFormValues = z.infer<typeof stationFormSchema>;
 
 interface ViewPortType {
-  latitude: number;
   longitude: number;
+  latitude: number;
 }
 
 export default function RegisterStationPage() {
@@ -95,25 +97,23 @@ export default function RegisterStationPage() {
   const [step, setStep] = useState(1);
   const myMapRef = useRef<MapRef | null>(null);
   const [viewPort, setViewPort] = useState<ViewPortType>({
-    latitude: 28.6448,
     longitude: 77.216721,
+    latitude: 28.6448,
   });
 
   const form = useForm<StationFormValues>({
     resolver: zodResolver(stationFormSchema),
     defaultValues: {
-      name: '',
-      address: '',
-      city: '',
-      state: '',
-      zip: '',
-      description: '',
-      chargerType: 'level2',
+      name: "",
+      address: "",
+      city: "",
+      state: "",
+      zip: "",
+      description: "",
+      chargerType: "level2",
       power: 7,
       price: 0.25,
-      connectorTypes: 'Type 2',
-      latitude: 28.6448,
-      longitude: 77.216721,
+      connectorTypes: "Type 2",
     },
   });
 
@@ -121,14 +121,13 @@ export default function RegisterStationPage() {
   async function onSubmit(data: StationFormValues) {
     const phantom = getPhantomProvider();
     if (!phantom) {
-      alert('Please install Phantom Wallet!');
+      alert("Please install Phantom Wallet!");
       return;
     }
 
     try {
       await phantom.connect();
-
-      const connection = new web3.Connection(network, 'confirmed');
+      const connection = new web3.Connection(network, "confirmed");
       const provider = new AnchorProvider(
         connection,
         phantom,
@@ -147,10 +146,10 @@ export default function RegisterStationPage() {
 
       // Map charger type to display string
       const chargerTypeMap: { [key: string]: string } = {
-        level1: 'Level 1 (120V)',
-        level2: 'Level 2 (240V)',
-        dcFast: 'DC Fast Charging',
-        other: 'Other',
+        level1: "Level 1 (120V)",
+        level2: "Level 2 (240V)",
+        dcFast: "DC Fast Charging",
+        other: "Other",
       };
 
       await program.methods
@@ -160,29 +159,27 @@ export default function RegisterStationPage() {
           data.city,
           data.state,
           data.zip,
-          data.description || '',
+          data.description || "",
           chargerTypeMap[data.chargerType],
           new BN(data.power),
-          new BN(data.price),
-          data.connectorTypes,
-          data.latitude,
-          data.longitude
+          data.price,
+          data.connectorTypes
         )
         .accounts({
           charger: chargerPda,
-          payer: phantom.publicKey,
+          payer: phantom.publicKey!,
           systemProgram: web3.SystemProgram.programId,
         })
         .rpc();
 
-      alert('Charger registered on Solana!');
-      router.push('/register-station/success');
+      alert("Charger registered on Solana!");
+      router.push("/register-station/success");
     } catch (err: any) {
       console.error(err);
       // alert("Transaction failed: " + (err.message || err));
       toast({
-        variant: 'destructive',
-        title: 'Transaction Failed To Execute',
+        variant: "destructive",
+        title: "Transaction Failed To Execute",
         description: err.message || err,
       });
     }
@@ -192,13 +189,13 @@ export default function RegisterStationPage() {
     e.preventDefault();
     console.log(e.lngLat);
     setViewPort({
-      latitude: e.lngLat.lat,
       longitude: e.lngLat.lng,
+      latitude: e.lngLat.lat,
     });
   };
 
   function onError(errors: FieldErrors<StationFormValues>) {
-    console.log('Validation errors:', errors);
+    console.log("Validation errors:", errors);
 
     // Helper to get first error message from FieldErrors recursively
     function getFirstErrorMessage(errors: FieldErrors<any>): string | null {
@@ -208,14 +205,14 @@ export default function RegisterStationPage() {
 
         // If this is a FieldError with message
         if (
-          'message' in errorOrNested &&
-          typeof errorOrNested.message === 'string'
+          "message" in errorOrNested &&
+          typeof errorOrNested.message === "string"
         ) {
           return errorOrNested.message;
         }
 
         // Otherwise, recurse into nested errors
-        if (typeof errorOrNested === 'object') {
+        if (typeof errorOrNested === "object") {
           const nestedMessage = getFirstErrorMessage(
             errorOrNested as FieldErrors<any>
           );
@@ -225,11 +222,11 @@ export default function RegisterStationPage() {
       return null;
     }
 
-    const message = getFirstErrorMessage(errors) || 'Please check all fields.';
+    const message = getFirstErrorMessage(errors) || "Please check all fields.";
 
     toast({
-      variant: 'destructive',
-      title: 'Form Error',
+      variant: "destructive",
+      title: "Form Error",
       description: message,
     });
   }
@@ -251,10 +248,10 @@ export default function RegisterStationPage() {
         <div className="mb-8">
           <div className="flex justify-between">
             <div
-              className={`flex-1 flex flex-col items-center ${step >= 1 ? 'text-rose-600' : 'text-muted-foreground'}`}
+              className={`flex-1 flex flex-col items-center ${step >= 1 ? "text-rose-600" : "text-muted-foreground"}`}
             >
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${step >= 1 ? 'bg-rose-100 dark:bg-rose-900' : 'bg-muted'}`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${step >= 1 ? "bg-rose-100 dark:bg-rose-900" : "bg-muted"}`}
               >
                 {step > 1 ? <Check className="h-5 w-5" /> : <span>1</span>}
               </div>
@@ -263,15 +260,15 @@ export default function RegisterStationPage() {
 
             <div className="flex-1 flex justify-center">
               <div
-                className={`h-0.5 w-full self-center ${step >= 2 ? 'bg-rose-600' : 'bg-muted'}`}
+                className={`h-0.5 w-full self-center ${step >= 2 ? "bg-rose-600" : "bg-muted"}`}
               />
             </div>
 
             <div
-              className={`flex-1 flex flex-col items-center ${step >= 2 ? 'text-rose-600' : 'text-muted-foreground'}`}
+              className={`flex-1 flex flex-col items-center ${step >= 2 ? "text-rose-600" : "text-muted-foreground"}`}
             >
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${step >= 2 ? 'bg-rose-100 dark:bg-rose-900' : 'bg-muted'}`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${step >= 2 ? "bg-rose-100 dark:bg-rose-900" : "bg-muted"}`}
               >
                 {step > 2 ? <Check className="h-5 w-5" /> : <span>2</span>}
               </div>
@@ -279,14 +276,14 @@ export default function RegisterStationPage() {
             </div>
             <div className="flex-1 flex justify-center">
               <div
-                className={`h-0.5 w-full self-center ${step >= 3 ? 'bg-rose-600' : 'bg-muted'}`}
+                className={`h-0.5 w-full self-center ${step >= 3 ? "bg-rose-600" : "bg-muted"}`}
               />
             </div>
             <div
-              className={`flex-1 flex flex-col items-center ${step >= 3 ? 'text-rose-600' : 'text-muted-foreground'}`}
+              className={`flex-1 flex flex-col items-center ${step >= 3 ? "text-rose-600" : "text-muted-foreground"}`}
             >
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${step >= 3 ? 'bg-rose-100 dark:bg-rose-900' : 'bg-muted'}`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${step >= 3 ? "bg-rose-100 dark:bg-rose-900" : "bg-muted"}`}
               >
                 {step > 3 ? <Check className="h-5 w-5" /> : <span>3</span>}
               </div>
@@ -294,14 +291,14 @@ export default function RegisterStationPage() {
             </div>
             <div className="flex-1 flex justify-center">
               <div
-                className={`h-0.5 w-full self-center ${step >= 4 ? 'bg-rose-600' : 'bg-muted'}`}
+                className={`h-0.5 w-full self-center ${step >= 4 ? "bg-rose-600" : "bg-muted"}`}
               />
             </div>
             <div
-              className={`flex-1 flex flex-col items-center ${step >= 4 ? 'text-rose-600' : 'text-muted-foreground'}`}
+              className={`flex-1 flex flex-col items-center ${step >= 4 ? "text-rose-600" : "text-muted-foreground"}`}
             >
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${step >= 4 ? 'bg-rose-100 dark:bg-rose-900' : 'bg-muted'}`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${step >= 4 ? "bg-rose-100 dark:bg-rose-900" : "bg-muted"}`}
               >
                 <span>4</span>
               </div>
@@ -448,16 +445,16 @@ export default function RegisterStationPage() {
                       onDblClick={(e) => handleDoubleClick(e)}
                       ref={myMapRef}
                       style={{
-                        width: '100%',
-                        height: '100%',
-                        position: 'absolute',
+                        width: "100%",
+                        height: "100%",
+                        position: "absolute",
                         zIndex: 10,
                       }}
                       mapStyle="https://tiles.openfreemap.org/styles/liberty"
                     >
                       <Marker
-                        latitude={viewPort.latitude}
                         longitude={viewPort.longitude}
+                        latitude={viewPort.latitude}
                       >
                         <MapPin className={`w-8 h-8 text-red-600`} />
                       </Marker>
@@ -477,17 +474,18 @@ export default function RegisterStationPage() {
                   {viewPort && (
                     <div className="flex justify-between items-center gap-4 text-sm">
                       <div className="flex flex-col justify-center items-center gap-2">
-                        <span className="px-4 py-2 bg-primary rounded-lg">
-                          {viewPort.latitude}
-                        </span>
-                        <Label>Latitude</Label>
-                      </div>
-                      <div className="flex flex-col justify-center items-center gap-2">
+                       
                         <span className="px-4 py-2 bg-primary rounded-lg">
                           {viewPort.longitude}
                         </span>
+                        <Label>Logitude</Label>
+                      </div>
+                      <div className="flex flex-col justify-center items-center gap-2">
+                        <span className="px-4 py-2 bg-primary rounded-lg">
+                          {viewPort.latitude}
+                        </span>
 
-                        <Label>Longitude</Label>
+                        <Label>Latitude</Label>
                       </div>
                     </div>
                   )}
@@ -646,35 +644,45 @@ export default function RegisterStationPage() {
                     <h3 className="font-medium">Station Details</h3>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                       <div className="text-muted-foreground">Name:</div>
-                      <div>{form.getValues('name')}</div>
+                      <div>{form.getValues("name")}</div>
                       <div className="text-muted-foreground">Address:</div>
-                      <div>{`${form.getValues('address')}, ${form.getValues('city')}, ${form.getValues('state')} ${form.getValues('zip')}`}</div>
+                      <div>{`${form.getValues("address")}, ${form.getValues("city")}, ${form.getValues("state")} ${form.getValues("zip")}`}</div>
                       <div className="text-muted-foreground">Description:</div>
-                      <div>{form.getValues('description') || 'N/A'}</div>
+                      <div>{form.getValues("description") || "N/A"}</div>
                     </div>
 
                     <Separator />
+
+                    <div className="space-y-4">
+                    <h3 className="font-medium">Location Details</h3>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <div className="text-muted-foreground">Longitude:</div>
+                    <div>{viewPort.longitude}</div>
+                    <div className="text-muted-foreground">Latitude:</div>
+                      <div>{viewPort.latitude}</div>
+                    </div>
+                    </div>
 
                     <h3 className="font-medium">Technical Specifications</h3>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                       <div className="text-muted-foreground">Charger Type:</div>
                       <div>
-                        {form.getValues('chargerType') === 'level1' &&
-                          'Level 1 (120V)'}
-                        {form.getValues('chargerType') === 'level2' &&
-                          'Level 2 (240V)'}
-                        {form.getValues('chargerType') === 'dcFast' &&
-                          'DC Fast Charging'}
-                        {form.getValues('chargerType') === 'other' && 'Other'}
+                        {form.getValues("chargerType") === "level1" &&
+                          "Level 1 (120V)"}
+                        {form.getValues("chargerType") === "level2" &&
+                          "Level 2 (240V)"}
+                        {form.getValues("chargerType") === "dcFast" &&
+                          "DC Fast Charging"}
+                        {form.getValues("chargerType") === "other" && "Other"}
                       </div>
                       <div className="text-muted-foreground">Power Output:</div>
-                      <div>{form.getValues('power')} kW</div>
+                      <div>{form.getValues("power")} kW</div>
                       <div className="text-muted-foreground">Price:</div>
-                      <div>{form.getValues('price')} SOL/kWh</div>
+                      <div>{form.getValues("price")} SOL/kWh</div>
                       <div className="text-muted-foreground">
                         Connector Types:
                       </div>
-                      <div>{form.getValues('connectorTypes')}</div>
+                      <div>{form.getValues("connectorTypes")}</div>
                     </div>
                   </div>
 

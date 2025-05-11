@@ -14,6 +14,7 @@ import { MapComponent } from "@/components/map-component"
 import { useWallet } from "@solana/wallet-adapter-react"
 import { MapRef, useMap } from "react-map-gl/maplibre"
 import { useAMap } from "@/hooks/usemap"
+import { NomanatomData, NomanatomType } from "@/types/nomanatom"
 
 const mockStations = [
   {
@@ -91,6 +92,8 @@ export default function MapPage() {
   const [searchLocation, setSearchLocation] = useState(locationQuery || "")
   const [priceRange, setPriceRange] = useState([0, 50])
   const [powerRange, setPowerRange] = useState([0, 350])
+  const [city, setCity] = useState<NomanatomData>()
+  const [cities, setCities] = useState<NomanatomData[]>()
   const [availableOnly, setAvailableOnly] = useState(false)
   const [stations, setStations] = useState(mockStations)
   const [filteredStations, setFilteredStations] = useState(mockStations)
@@ -109,6 +112,40 @@ export default function MapPage() {
       listTabRef.current?.click()
     }
   }
+
+
+  const fetchLoction = async () => {
+        const response = await fetch(`api/${searchLocation}`, {
+          method : "GET",
+        })
+  
+        const responseData:NomanatomType = await response.json()
+  
+        const citydataArray = responseData.data;
+  
+        const city = citydataArray.filter(mycity => mycity.class === "boundary")[0]
+        setCities(citydataArray);
+        setCity(city);
+      }
+  
+
+  // useEffect(() => {
+  //   const fetchLoction = async () => {
+  //     const response = await fetch(`api/${searchLocation}`, {
+  //       method : "GET",
+  //     })
+
+  //     const responseData:NomanatomType = await response.json()
+
+  //     const citydataArray = responseData.data;
+
+  //     const city = citydataArray.filter(mycity => mycity.class === "boundary")[0]
+
+  //     setCity(city);
+  //   }
+
+  //   fetchLoction()
+  // },[])
 
 
   // Filter stations based on criteria
@@ -144,7 +181,7 @@ export default function MapPage() {
                 Filters
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 relative">
               <form onSubmit={handleSearch} className="space-y-4">
                 <div className="space-y-2">
                   <label htmlFor="location" className="text-sm font-medium">
@@ -161,11 +198,20 @@ export default function MapPage() {
                     />
                   </div>
                 </div>
-                <Button type="submit" className="w-full">
+                <Button type="submit" className="w-full" onClick={fetchLoction}>
                   <Search className="mr-2 h-4 w-4" />
                   Search with AI
                 </Button>
               </form>
+
+              <div className="absolute z-50 bg-secondary p-4">
+                {cities && (cities.map(mycity => (<CardContent>
+                  <div className="">
+                  {mycity.name}
+                  {mycity.type}
+                  </div>
+                </CardContent>)))}
+              </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Price (SOL per kWh)</label>
@@ -214,6 +260,7 @@ export default function MapPage() {
             <TabsContent value="map" className="mt-0">
               <div className="bg-muted rounded-lg overflow-hidden h-[600px]">
                 <MapComponent
+                city={city}
                   mapRef = {mapRef}
                   stations={filteredStations}
                   selectedStation={selectedStation}
