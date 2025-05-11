@@ -18,10 +18,11 @@ import {
   setProvider,
   getProvider,
   AccountClient,
-} from "@coral-xyz/anchor";
-import idl from "@/idl/ev_charging.json"; // Adjust path as needed
-import { useAMap } from "@/hooks/usemap";
-import { NomanatomData, NomanatomType } from "@/types/nomanatom";
+} from '@coral-xyz/anchor';
+import idl from '@/idl/ev_charging.json'; // Adjust path as needed
+import { useAMap } from "@/hooks/usemap"
+import { NomanatomData, NomanatomType } from "@/types/nomanatom"
+import { PhantomProvider, Station } from '@/types';
 import { Loader } from "@/components/ui/loader";
 
 const programId = new web3.PublicKey(idl.address);
@@ -89,7 +90,7 @@ export default function MapPage() {
         const chargers = await program.account.charger.all();
         console.log("Chargers data:", chargers);
 
-        const stationList = chargers.map(({ account, publicKey }) => ({
+        const stationList = chargers.map(({ account, publicKey }: { account: any; publicKey: any }) => ({
           id: publicKey.toBase58(),
           name: account.name,
           address: account.address,
@@ -154,7 +155,7 @@ export default function MapPage() {
 
   // Filter stations based on criteria
   useEffect(() => {
-    const filtered = stations.filter((station) => {
+    const filtered = stations.filter((station: Station) => {
       if (availableOnly && !station.available) return false;
       if (
         station.price < priceRange[0] / 100 ||
@@ -272,7 +273,7 @@ export default function MapPage() {
                   type="checkbox"
                   id="available"
                   checked={availableOnly}
-                  onChange={(e) => setAvailableOnly(e.target.checked)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAvailableOnly(e.target.checked)}
                   className="h-4 w-4 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
                 />
                 <label htmlFor="available" className="text-sm font-medium">
@@ -316,7 +317,7 @@ export default function MapPage() {
             <TabsContent value="list" className="mt-0">
               <div className="space-y-4">
                 {filteredStations.length > 0 ? (
-                  filteredStations.map((station) => (
+                  filteredStations.map((station: Station) => (
                     <StationCard
                       key={station.id}
                       mapRef={mapRef}
