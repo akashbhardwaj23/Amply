@@ -22,6 +22,7 @@ import {
 import idl from '@/idl/ev_charging.json'; // Adjust path as needed
 import { useAMap } from "@/hooks/usemap"
 import { NomanatomData, NomanatomType } from "@/types/nomanatom"
+import { PhantomProvider, Station } from '@/types';
 
 const programId = new web3.PublicKey(idl.address);
 const network = 'https://api.devnet.solana.com';
@@ -87,7 +88,7 @@ export default function MapPage() {
         const chargers = await program.account.charger.all();
         console.log('Chargers data:', chargers);
 
-        const stationList = chargers.map(({ account, publicKey }) => ({
+        const stationList = chargers.map(({ account, publicKey }: { account: any; publicKey: any }) => ({
           id: publicKey.toBase58(),
           name: account.name,
           address: account.address,
@@ -148,7 +149,7 @@ export default function MapPage() {
 
   // Filter stations based on criteria
   useEffect(() => {
-    const filtered = stations.filter((station) => {
+    const filtered = stations.filter((station: Station) => {
       if (availableOnly && !station.available) return false;
       if (
         station.price < priceRange[0] / 100 ||
@@ -202,7 +203,7 @@ export default function MapPage() {
                       placeholder="Enter city or address"
                       className="pl-9"
                       value={searchLocation}
-                      onChange={(e) => setSearchLocation(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchLocation(e.target.value)}
                     />
                   </div>
                 </div>
@@ -213,7 +214,7 @@ export default function MapPage() {
               </form>
 
               <div className="absolute z-50 bg-secondary p-4">
-                {cities && (cities.map(mycity => (<CardContent>
+                {cities && (cities.map((mycity: NomanatomData) => (<CardContent>
                   <div className="">
                   {mycity.name}
                   {mycity.type}
@@ -256,7 +257,7 @@ export default function MapPage() {
                   type="checkbox"
                   id="available"
                   checked={availableOnly}
-                  onChange={(e) => setAvailableOnly(e.target.checked)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAvailableOnly(e.target.checked)}
                   className="h-4 w-4 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
                 />
                 <label htmlFor="available" className="text-sm font-medium">
@@ -300,7 +301,7 @@ export default function MapPage() {
             <TabsContent value="list" className="mt-0">
               <div className="space-y-4">
                 {filteredStations.length > 0 ? (
-                  filteredStations.map((station) => (
+                  filteredStations.map((station: Station) => (
                     <StationCard
                       key={station.id}
                       mapRef={mapRef}
