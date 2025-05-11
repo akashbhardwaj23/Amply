@@ -1,117 +1,115 @@
-"use client"
+'use client';
 
-
-import { useState, useEffect, useRef } from "react"
-import { useSearchParams } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Slider } from "@/components/ui/slider"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { MapPin, Filter, Search } from "lucide-react"
-import { StationCard } from "@/components/station-card"
-import { MapComponent } from "@/components/map-component"
-import { useWallet } from "@solana/wallet-adapter-react"
-import { MapRef, useMap } from "react-map-gl/maplibre"
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MapPin, Filter, Search } from 'lucide-react';
+import { StationCard } from '@/components/station-card';
+import { MapComponent } from '@/components/map-component';
+import { MapRef } from 'react-map-gl/maplibre';
+import {
+  web3,
+  AnchorProvider,
+  Program,
+  setProvider,
+  getProvider,
+  AccountClient,
+} from '@coral-xyz/anchor';
+import idl from '@/idl/ev_charging.json'; // Adjust path as needed
 import { useAMap } from "@/hooks/usemap"
 import { NomanatomData, NomanatomType } from "@/types/nomanatom"
 
-const mockStations = [
-  {
-    id: "1",
-    name: "SolCharge Downtown",
-    address: "123 Main St, Anytown",
-    price: 0.25,
-    rating: 4.8,
-    available: true,
-    power: 150,
-    lat: 37.7749,
-    lng: -122.4194,
-  },
-  {
-    id: "2",
-    name: "EcoCharge Plaza",
-    address: "456 Oak Ave, Somewhere",
-    price: 0.3,
-    rating: 4.5,
-    available: true,
-    power: 50,
-    lat: 37.785,
-    lng: -122.4,
-  },
-  {
-    id: "3",
-    name: "GreenWatt Station",
-    address: "789 Pine St, Elsewhere",
-    price: 0.22,
-    rating: 4.7,
-    available: false,
-    power: 350,
-    lat: 37.77,
-    lng: -122.43,
-  },
-  {
-    id: "4",
-    name: "Volt Boost Center",
-    address: "101 Elm St, Nowhere",
-    price: 0.28,
-    rating: 4.6,
-    available: true,
-    power: 100,
-    lat: 37.765,
-    lng: -122.41,
-  },
-  {
-    id: "5",
-    name: "SolCharge Delhi",
-    address: "Delhi",
-    price: 0.25,
-    rating: 4.8,
-    available: true,
-    power: 150,
-    lat: 28.6448,
-    lng: 77.216721,
-  },
-  {
-    id: "6",
-    name: "SolCharge Delhi New",
-    address: "New Delhi",
-    price: 0.25,
-    rating: 4.8,
-    available: true,
-    power: 150,
-    lat: 28.65,
-    lng: 77.2168,
-  },
-]
+const programId = new web3.PublicKey(idl.address);
+const network = 'https://api.devnet.solana.com';
+
+const getPhantomProvider = (): PhantomProvider | undefined => {
+  if (typeof window !== 'undefined' && 'solana' in window) {
+    const provider = window.solana as PhantomProvider;
+    if (provider.isPhantom) return provider;
+  }
+  window.open('https://phantom.app/', '_blank');
+  return undefined;
+};
 
 export default function MapPage() {
-  const searchParams = useSearchParams()
-  const locationQuery = searchParams.get("location")
-
+  const searchParams = useSearchParams();
+  const locationQuery = searchParams.get('location');
   const [searchLocation, setSearchLocation] = useState(locationQuery || "")
   const [priceRange, setPriceRange] = useState([0, 50])
   const [powerRange, setPowerRange] = useState([0, 350])
   const [city, setCity] = useState<NomanatomData>()
   const [cities, setCities] = useState<NomanatomData[]>()
   const [availableOnly, setAvailableOnly] = useState(false)
-  const [stations, setStations] = useState(mockStations)
-  const [filteredStations, setFilteredStations] = useState(mockStations)
+  const [stations, setStations] = useState([])
+  const [filteredStations, setFilteredStations] = useState([])
   const [selectedStation, setSelectedStation] = useState<string | null>(null)
   const [view, setView] = useState<"list" | "map">("map")
   const mapRef = useRef<MapRef | null>(null);
-
   const mapTabRef = useRef<HTMLButtonElement | null>(null);
   const listTabRef = useRef<HTMLButtonElement | null>(null);
 
+  // --- Fetch stations from Solana on mount ---
+  useEffect(() => {
+    // console.log('11');
+    // console.log('IDL content:', idl);
+    // console.log('programId:', programId.toString());
 
-  const handleTabChange = (tabType : "map" | "list") => {
-    if(tabType === "map"){
-      mapTabRef.current?.click();
-    } else {
-      listTabRef.current?.click()
+    async function fetchStations() {
+      const phantom = getPhantomProvider() as PhantomProvider;
+      if (!phantom) {
+        alert('Please install Phantom Wallet!');
+        return;
+      }
+      console.log('333');
+      try {
+        await phantom.connect();
+        console.log('Phantom connected:', phantom.isConnected);
+        console.log('444');
+
+        const connection = new web3.Connection(network, 'confirmed');
+        const provider = new AnchorProvider(
+          connection,
+          phantom,
+          AnchorProvider.defaultOptions()
+        );
+        setProvider(provider);
+        console.log('555');
+        const anchorProvider = getProvider();
+
+        const program = new Program(idl, anchorProvider);
+        console.log('programmm', program);
+
+        console.log('777');
+        const chargers = await program.account.charger.all();
+        console.log('Chargers data:', chargers);
+
+        const stationList = chargers.map(({ account, publicKey }) => ({
+          id: publicKey.toBase58(),
+          name: account.name,
+          address: account.address,
+          price: Number(account.price) / web3.LAMPORTS_PER_SOL, // adjust if price is in lamports
+          rating: 4.8, // Placeholder, replace with real rating if available
+          available: account.available ?? true, // Placeholder
+          power: Number(account.power),
+          lat: Number(account.latitude),
+          lng: Number(account.longitude),
+        }));
+
+        console.log('station', stationList);
+        setStations(stationList);
+        setFilteredStations(stationList);
+      } catch (e) {
+        console.error('Failed to fetch stations:', e);
+      }
     }
-  }
+
+    fetchStations();
+  }, []);
+
 
 
   const fetchLoction = async () => {
@@ -151,26 +149,36 @@ export default function MapPage() {
   // Filter stations based on criteria
   useEffect(() => {
     const filtered = stations.filter((station) => {
-      if (availableOnly && !station.available) return false
-      if (station.price < priceRange[0] / 100 || station.price > priceRange[1] / 100) return false
-      if (station.power < powerRange[0] || station.power > powerRange[1]) return false
-      return true
-    })
-    setFilteredStations(filtered)
-  }, [stations, priceRange, powerRange, availableOnly])
+      if (availableOnly && !station.available) return false;
+      if (
+        station.price < priceRange[0] / 100 ||
+        station.price > priceRange[1] / 100
+      )
+        return false;
+      if (station.power < powerRange[0] || station.power > powerRange[1])
+        return false;
+      return true;
+    });
+    setFilteredStations(filtered);
+  }, [stations, priceRange, powerRange, availableOnly]);
 
   const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    // In a real app, this would call an API with AI search capabilities
-    console.log("Searching for:", searchLocation)
+    e.preventDefault();
     // For demo, we'll just reset filters
-    setFilteredStations(mockStations)
-  }
+    setFilteredStations(stations);
+  };
+
+  const handleTabChange = (tabType: 'map' | 'list') => {
+    if (tabType === 'map') {
+      mapTabRef.current?.click();
+    } else {
+      listTabRef.current?.click();
+    }
+  };
 
   return (
     <div className="container py-8">
       <h1 className="text-3xl font-bold mb-6">Find Charging Stations</h1>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Filters sidebar */}
         <div className="lg:col-span-1">
@@ -200,7 +208,7 @@ export default function MapPage() {
                 </div>
                 <Button type="submit" className="w-full" onClick={fetchLoction}>
                   <Search className="mr-2 h-4 w-4" />
-                  Search with AI
+                  Search
                 </Button>
               </form>
 
@@ -214,23 +222,35 @@ export default function MapPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Price (SOL per kWh)</label>
-                <Slider defaultValue={[0, 50]} max={50} step={1} value={priceRange} onValueChange={setPriceRange} />
+                <label className="text-sm font-medium">
+                  Price (SOL per kWh)
+                </label>
+                <Slider
+                  defaultValue={[0, 50]}
+                  max={50}
+                  step={1}
+                  value={priceRange}
+                  onValueChange={setPriceRange}
+                />
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>{(priceRange[0] / 100).toFixed(2)} SOL</span>
                   <span>{(priceRange[1] / 100).toFixed(2)} SOL</span>
                 </div>
               </div>
-
               <div className="space-y-2">
                 <label className="text-sm font-medium">Power (kW)</label>
-                <Slider defaultValue={[0, 350]} max={350} step={10} value={powerRange} onValueChange={setPowerRange} />
+                <Slider
+                  defaultValue={[0, 350]}
+                  max={350}
+                  step={10}
+                  value={powerRange}
+                  onValueChange={setPowerRange}
+                />
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>{powerRange[0]} kW</span>
                   <span>{powerRange[1]} kW</span>
                 </div>
               </div>
-
               <div className="flex items-center space-x-2">
                 <input
                   type="checkbox"
@@ -246,21 +266,30 @@ export default function MapPage() {
             </CardContent>
           </Card>
         </div>
-
         <div className="lg:col-span-2">
-          <Tabs defaultValue="map" value={view} className="w-full" onValueChange={(v : any) => setView(v as "list" | "map")}>
+          <Tabs
+            defaultValue="map"
+            value={view}
+            className="w-full"
+            onValueChange={(v: any) => setView(v as 'list' | 'map')}
+          >
             <div className="flex justify-between items-center mb-4">
               <TabsList>
-                <TabsTrigger value="map" ref={mapTabRef}>Map View</TabsTrigger>
-                <TabsTrigger value="list" ref={listTabRef}>List View</TabsTrigger>
+                <TabsTrigger value="map" ref={mapTabRef}>
+                  Map View
+                </TabsTrigger>
+                <TabsTrigger value="list" ref={listTabRef}>
+                  List View
+                </TabsTrigger>
               </TabsList>
-              <div className="text-sm text-muted-foreground">{filteredStations.length} stations found</div>
+              <div className="text-sm text-muted-foreground">
+                {filteredStations.length} stations found
+              </div>
             </div>
-
             <TabsContent value="map" className="mt-0">
               <div className="bg-muted rounded-lg overflow-hidden h-[600px]">
                 <MapComponent
-                city={city}
+                  city={city}
                   mapRef = {mapRef}
                   stations={filteredStations}
                   selectedStation={selectedStation}
@@ -268,7 +297,6 @@ export default function MapPage() {
                 />
               </div>
             </TabsContent>
-
             <TabsContent value="list" className="mt-0">
               <div className="space-y-4">
                 {filteredStations.length > 0 ? (
@@ -277,7 +305,7 @@ export default function MapPage() {
                       key={station.id}
                       mapRef={mapRef}
                       station={station}
-                      handleTabChange = {() => handleTabChange("map")}
+                      handleTabChange={() => handleTabChange('map')}
                       selected={selectedStation === station.id}
                       onSelect={() => setSelectedStation(station.id)}
                       setView={setView}
@@ -285,7 +313,9 @@ export default function MapPage() {
                   ))
                 ) : (
                   <div className="text-center py-12">
-                    <p className="text-muted-foreground">No stations found matching your criteria</p>
+                    <p className="text-muted-foreground">
+                      No stations found matching your criteria
+                    </p>
                   </div>
                 )}
               </div>
@@ -294,5 +324,5 @@ export default function MapPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
