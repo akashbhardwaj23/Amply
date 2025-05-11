@@ -30,14 +30,14 @@ export default async function SignIn(){
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex flex-col gap-2 mb-4">
+                    {/* <div className="flex flex-col gap-2 mb-4">
                     <Label htmlFor="email">Email</Label>
                     <Input id="email"/>
                     </div>
                     <div className="flex flex-col gap-2 mb-4">
                     <Label htmlFor="password">Password</Label>
                     <Input id="password"/>
-                    </div>
+                    </div> */}
 
                    {!user && (<div className="flex justify-center items-center">
                             <Button variant={"secondary"}><SignInButton style={{border: "0px"}} /></Button>
