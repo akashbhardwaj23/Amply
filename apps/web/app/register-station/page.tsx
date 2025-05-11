@@ -38,13 +38,13 @@ import {
   Program,
   setProvider,
   getProvider,
-} from '@coral-xyz/anchor';
-import BN from 'bn.js';
-import idl from '@/idl/ev_charging.json'; // <-- adjust path if needed
-import { Map, MapRef, Marker, MapLayerMouseEvent } from 'react-map-gl/maplibre';
-import 'maplibre-gl/dist/maplibre-gl.css';
-import { Label } from '@/components/ui/label';
-
+} from "@coral-xyz/anchor";
+import BN from "bn.js";
+import idl from "@/idl/ev_charging.json"; // <-- adjust path if needed
+import { Map, MapRef, Marker, MapLayerMouseEvent } from "react-map-gl/maplibre";
+import "maplibre-gl/dist/maplibre-gl.css";
+import { Label } from "@/components/ui/label";
+import { PhantomProvider, FieldType } from "@/types";
 // const programId = new web3.PublicKey(
 //   'CbhmEH9wJTGShWpyHebvj15DXFJu7TkMK7pXydc9qoQ1'
 // ); // <-- replace with your deployed program ID
@@ -142,7 +142,7 @@ export default function RegisterStationPage() {
       );
       setProvider(provider);
       const anchorProvider = getProvider();
-      const program = new Program(idl, anchorProvider);
+      const program = new Program(idl as any, anchorProvider);
 
       // Find PDA for charger account
       const [chargerPda] = await web3.PublicKey.findProgramAddress(
@@ -161,10 +161,16 @@ export default function RegisterStationPage() {
       console.log('Charger PDA:', chargerPda.toBase58());
       console.log('Accounts:', {
         charger: chargerPda.toBase58(),
-        payer: phantom.publicKey.toBase58(),
+<<<<<<< HEAD
+        payer: phantom.publicKey?.toBase58(),
         systemProgram: web3.SystemProgram.programId.toBase58(),
+=======
+        payer: phantom.publicKey!,
+        systemProgram: web3.SystemProgram.programId,
+>>>>>>> d2bfcaff45d0e3a169db2b7428b3df5396520d36
       });
 
+      console.log(viewPort)
       await program.methods
         .createCharger(
           data.name,
@@ -177,12 +183,12 @@ export default function RegisterStationPage() {
           new BN(data.power),
           new BN(data.price),
           data.connectorTypes,
-          data.latitude,
-          data.longitude
+          viewPort.latitude,
+          viewPort.longitude
         )
         .accounts({
           charger: chargerPda,
-          payer: phantom.publicKey,
+          payer: phantom.publicKey!,
           systemProgram: web3.SystemProgram.programId,
         })
         .rpc();
@@ -190,7 +196,11 @@ export default function RegisterStationPage() {
       console.log('Charger PDA:', chargerPda.toBase58());
       console.log('Accounts:', {
         charger: chargerPda.toBase58(),
-        payer: phantom.publicKey.toBase58(),
+<<<<<<< HEAD
+        payer: phantom.publicKey?.toBase58(),
+=======
+        payer: phantom.publicKey!.toBase58(),
+>>>>>>> d2bfcaff45d0e3a169db2b7428b3df5396520d36
         systemProgram: web3.SystemProgram.programId.toBase58(),
       });
 
@@ -334,7 +344,7 @@ export default function RegisterStationPage() {
                   <FormField
                     control={form.control}
                     name="name"
-                    render={({ field }) => (
+                    render={({ field }: { field: FieldType }) => (
                       <FormItem>
                         <FormLabel>Station Name</FormLabel>
                         <FormControl>
@@ -354,7 +364,7 @@ export default function RegisterStationPage() {
                   <FormField
                     control={form.control}
                     name="address"
-                    render={({ field }) => (
+                    render={({ field }: { field: FieldType }) => (
                       <FormItem>
                         <FormLabel>Street Address</FormLabel>
                         <FormControl>
@@ -369,7 +379,7 @@ export default function RegisterStationPage() {
                     <FormField
                       control={form.control}
                       name="city"
-                      render={({ field }) => (
+                      render={({ field }: { field: FieldType }) => (
                         <FormItem>
                           <FormLabel>City</FormLabel>
                           <FormControl>
@@ -382,7 +392,7 @@ export default function RegisterStationPage() {
                     <FormField
                       control={form.control}
                       name="state"
-                      render={({ field }) => (
+                      render={({ field }: { field: FieldType }) => (
                         <FormItem>
                           <FormLabel>State</FormLabel>
                           <FormControl>
@@ -395,7 +405,7 @@ export default function RegisterStationPage() {
                     <FormField
                       control={form.control}
                       name="zip"
-                      render={({ field }) => (
+                      render={({ field }: { field: FieldType }) => (
                         <FormItem>
                           <FormLabel>ZIP Code</FormLabel>
                           <FormControl>
@@ -410,7 +420,7 @@ export default function RegisterStationPage() {
                   <FormField
                     control={form.control}
                     name="description"
-                    render={({ field }) => (
+                    render={({ field }: { field: FieldType }) => (
                       <FormItem>
                         <FormLabel>Description (Optional)</FormLabel>
                         <FormControl>
@@ -455,7 +465,7 @@ export default function RegisterStationPage() {
                       }}
                       interactive
                       id="mapStation"
-                      onDblClick={(e) => handleDoubleClick(e)}
+                      onDblClick={(e: MapLayerMouseEvent) => handleDoubleClick(e)}
                       ref={myMapRef}
                       style={{
                         width: '100%',
@@ -519,7 +529,7 @@ export default function RegisterStationPage() {
                   <FormField
                     control={form.control}
                     name="chargerType"
-                    render={({ field }) => (
+                    render={({ field }: { field: FieldType }) => (
                       <FormItem className="space-y-3">
                         <FormLabel>Charger Type</FormLabel>
                         <FormControl>
@@ -571,7 +581,7 @@ export default function RegisterStationPage() {
                     <FormField
                       control={form.control}
                       name="power"
-                      render={({ field }) => (
+                      render={({ field }: { field: FieldType }) => (
                         <FormItem>
                           <FormLabel>Power Output (kW)</FormLabel>
                           <FormControl>
@@ -589,7 +599,7 @@ export default function RegisterStationPage() {
                     <FormField
                       control={form.control}
                       name="price"
-                      render={({ field }) => (
+                      render={({ field }: { field: FieldType }) => (
                         <FormItem>
                           <FormLabel>Price (SOL per kWh)</FormLabel>
                           <FormControl>
@@ -609,7 +619,7 @@ export default function RegisterStationPage() {
                   <FormField
                     control={form.control}
                     name="connectorTypes"
-                    render={({ field }) => (
+                    render={({ field }: { field: FieldType }) => (
                       <FormItem>
                         <FormLabel>Connector Types</FormLabel>
                         <FormControl>

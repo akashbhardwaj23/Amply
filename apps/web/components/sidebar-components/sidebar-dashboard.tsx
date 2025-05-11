@@ -24,7 +24,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { SideBarUser } from "@/components/sidebar-components/side-bar-user";
 import { cn } from "@/lib/utils";
-import { redirect, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 
 // Menu items.
@@ -62,7 +62,7 @@ export default function SidebarComponent({
   user : any
 }) {
   const pathname = usePathname();
-  
+
   return (
     <Sidebar collapsible="icon">
       <SidebarContent className="text-foreground dark:text-white mt-4">
