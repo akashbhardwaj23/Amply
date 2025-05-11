@@ -161,13 +161,8 @@ export default function RegisterStationPage() {
       console.log('Charger PDA:', chargerPda.toBase58());
       console.log('Accounts:', {
         charger: chargerPda.toBase58(),
-<<<<<<< HEAD
-        payer: phantom.publicKey?.toBase58(),
-        systemProgram: web3.SystemProgram.programId.toBase58(),
-=======
         payer: phantom.publicKey!,
         systemProgram: web3.SystemProgram.programId,
->>>>>>> d2bfcaff45d0e3a169db2b7428b3df5396520d36
       });
 
       console.log(viewPort)
@@ -196,11 +191,7 @@ export default function RegisterStationPage() {
       console.log('Charger PDA:', chargerPda.toBase58());
       console.log('Accounts:', {
         charger: chargerPda.toBase58(),
-<<<<<<< HEAD
-        payer: phantom.publicKey?.toBase58(),
-=======
         payer: phantom.publicKey!.toBase58(),
->>>>>>> d2bfcaff45d0e3a169db2b7428b3df5396520d36
         systemProgram: web3.SystemProgram.programId.toBase58(),
       });
 

@@ -40,9 +40,7 @@ import {
 import { useUser } from '@civic/auth-web3/react';
 import { fetchChargerData } from '@/app/server/charger';
 import { Loader } from '@/components/ui/loader';
-// import { getPhantomProvider } from '@/utils/utils';
 
-const network = 'https://api.devnet.solana.com';
 
 const DashBoardPage = () => {
   const [cData, setCData] = useState();
@@ -62,7 +60,9 @@ const DashBoardPage = () => {
   // }
 
   if (isLoading) {
-    return <Loader />;
+    return (
+      <div className='flex justify-center items-center h-72'><Loader /></div>
+    )
   }
 
   return (

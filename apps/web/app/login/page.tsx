@@ -2,15 +2,11 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardTitle,
   CardHeader,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { SignInButton } from '@civic/auth-web3/react';
 import { getUser } from '@civic/auth-web3/nextjs';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { redirect } from 'next/navigation';
 
