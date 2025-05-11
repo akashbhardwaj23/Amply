@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Slider } from '@/components/ui/slider';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MapPin, Filter, Search } from 'lucide-react';
-import { StationCard } from '@/components/station-card';
-import { MapComponent } from '@/components/map-component';
-import { MapRef } from 'react-map-gl/maplibre';
+import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MapPin, Filter, Search } from "lucide-react";
+import { StationCard } from "@/components/station-card";
+import { MapComponent } from "@/components/map-component";
+import { MapRef } from "react-map-gl/maplibre";
 import {
   web3,
   AnchorProvider,
@@ -18,36 +18,38 @@ import {
   setProvider,
   getProvider,
   AccountClient,
-} from '@coral-xyz/anchor';
-import idl from '@/idl/ev_charging.json'; // Adjust path as needed
-import { useAMap } from "@/hooks/usemap"
-import { NomanatomData, NomanatomType } from "@/types/nomanatom"
+} from "@coral-xyz/anchor";
+import idl from "@/idl/ev_charging.json"; // Adjust path as needed
+import { useAMap } from "@/hooks/usemap";
+import { NomanatomData, NomanatomType } from "@/types/nomanatom";
+import { Loader } from "@/components/ui/loader";
 
 const programId = new web3.PublicKey(idl.address);
-const network = 'https://api.devnet.solana.com';
+const network = "https://api.devnet.solana.com";
 
 const getPhantomProvider = (): PhantomProvider | undefined => {
-  if (typeof window !== 'undefined' && 'solana' in window) {
+  if (typeof window !== "undefined" && "solana" in window) {
     const provider = window.solana as PhantomProvider;
     if (provider.isPhantom) return provider;
   }
-  window.open('https://phantom.app/', '_blank');
+  window.open("https://phantom.app/", "_blank");
   return undefined;
 };
 
 export default function MapPage() {
   const searchParams = useSearchParams();
-  const locationQuery = searchParams.get('location');
-  const [searchLocation, setSearchLocation] = useState(locationQuery || "")
-  const [priceRange, setPriceRange] = useState([0, 50])
-  const [powerRange, setPowerRange] = useState([0, 350])
-  const [city, setCity] = useState<NomanatomData>()
-  const [cities, setCities] = useState<NomanatomData[]>()
-  const [availableOnly, setAvailableOnly] = useState(false)
-  const [stations, setStations] = useState([])
-  const [filteredStations, setFilteredStations] = useState([])
-  const [selectedStation, setSelectedStation] = useState<string | null>(null)
-  const [view, setView] = useState<"list" | "map">("map")
+  const locationQuery = searchParams.get("location");
+  const [searchLocation, setSearchLocation] = useState(locationQuery || "");
+  const [priceRange, setPriceRange] = useState([0, 50]);
+  const [powerRange, setPowerRange] = useState([0, 350]);
+  const [loading, setLoading] = useState(false);
+  const [city, setCity] = useState<NomanatomData>();
+  const [cities, setCities] = useState<NomanatomData[]>();
+  const [availableOnly, setAvailableOnly] = useState(false);
+  const [stations, setStations] = useState([]);
+  const [filteredStations, setFilteredStations] = useState([]);
+  const [selectedStation, setSelectedStation] = useState<string | null>(null);
+  const [view, setView] = useState<"list" | "map">("map");
   const mapRef = useRef<MapRef | null>(null);
   const mapTabRef = useRef<HTMLButtonElement | null>(null);
   const listTabRef = useRef<HTMLButtonElement | null>(null);
@@ -61,31 +63,31 @@ export default function MapPage() {
     async function fetchStations() {
       const phantom = getPhantomProvider() as PhantomProvider;
       if (!phantom) {
-        alert('Please install Phantom Wallet!');
+        alert("Please install Phantom Wallet!");
         return;
       }
-      console.log('333');
+      console.log("333");
       try {
         await phantom.connect();
-        console.log('Phantom connected:', phantom.isConnected);
-        console.log('444');
+        console.log("Phantom connected:", phantom.isConnected);
+        console.log("444");
 
-        const connection = new web3.Connection(network, 'confirmed');
+        const connection = new web3.Connection(network, "confirmed");
         const provider = new AnchorProvider(
           connection,
           phantom,
           AnchorProvider.defaultOptions()
         );
         setProvider(provider);
-        console.log('555');
+        console.log("555");
         const anchorProvider = getProvider();
 
         const program = new Program(idl, anchorProvider);
-        console.log('programmm', program);
+        console.log("programmm", program);
 
-        console.log('777');
+        console.log("777");
         const chargers = await program.account.charger.all();
-        console.log('Chargers data:', chargers);
+        console.log("Chargers data:", chargers);
 
         const stationList = chargers.map(({ account, publicKey }) => ({
           id: publicKey.toBase58(),
@@ -99,33 +101,38 @@ export default function MapPage() {
           lng: Number(account.longitude),
         }));
 
-        console.log('station', stationList);
+        console.log("station", stationList);
         setStations(stationList);
         setFilteredStations(stationList);
       } catch (e) {
-        console.error('Failed to fetch stations:', e);
+        console.error("Failed to fetch stations:", e);
       }
     }
 
     fetchStations();
   }, []);
 
-
-
   const fetchLoction = async () => {
-        const response = await fetch(`api/${searchLocation}`, {
-          method : "GET",
-        })
-  
-        const responseData:NomanatomType = await response.json()
-  
-        const citydataArray = responseData.data;
-  
-        const city = citydataArray.filter(mycity => mycity.class === "boundary")[0]
-        setCities(citydataArray);
-        setCity(city);
-      }
-  
+    setLoading(true);
+    try {
+      const response = await fetch(`api/${searchLocation}`, {
+        method: "GET",
+      });
+
+      const responseData: NomanatomType = await response.json();
+
+      const citydataArray = responseData.data;
+
+      const city = citydataArray.filter(
+        (mycity) => mycity.class === "boundary"
+      )[0];
+      setCities(citydataArray);
+      setCity(city);
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+    }
+  };
 
   // useEffect(() => {
   //   const fetchLoction = async () => {
@@ -144,7 +151,6 @@ export default function MapPage() {
 
   //   fetchLoction()
   // },[])
-
 
   // Filter stations based on criteria
   useEffect(() => {
@@ -168,8 +174,8 @@ export default function MapPage() {
     setFilteredStations(stations);
   };
 
-  const handleTabChange = (tabType: 'map' | 'list') => {
-    if (tabType === 'map') {
+  const handleTabChange = (tabType: "map" | "list") => {
+    if (tabType === "map") {
       mapTabRef.current?.click();
     } else {
       listTabRef.current?.click();
@@ -202,24 +208,34 @@ export default function MapPage() {
                       placeholder="Enter city or address"
                       className="pl-9"
                       value={searchLocation}
-                      onChange={(e) => setSearchLocation(e.target.value)}
+                      onChange={(e) => {
+                        setSearchLocation(e.target.value);
+                        setCities([]);
+                      }}
                     />
                   </div>
                 </div>
-                <Button type="submit" className="w-full" onClick={fetchLoction}>
-                  <Search className="mr-2 h-4 w-4" />
+                <Button type="submit" disabled={loading} className="w-full" onClick={fetchLoction}>
+                  {loading ? (<Loader className="h-4 w-4"/>) : (
+                    <>
+                    <Search className="h-4 w-4" />
                   Search
+                    </>
+                  )}
                 </Button>
               </form>
 
-              <div className="absolute z-50 bg-secondary p-4">
-                {cities && (cities.map(mycity => (<CardContent>
-                  <div className="">
-                  {mycity.name}
-                  {mycity.type}
-                  </div>
-                </CardContent>)))}
-              </div>
+              {cities && (
+                <div className="absolute top-12 z-50 rounded-b-xl max-w-64 bg-black">
+                  {cities.map((mycity) => (
+                    <div className="border-b p-4 flex flex-col">
+                      <span>{mycity.display_name}</span>
+                      <span>Long : {mycity.lon}</span>
+                      <span>Lat : {mycity.lat}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">
@@ -271,7 +287,7 @@ export default function MapPage() {
             defaultValue="map"
             value={view}
             className="w-full"
-            onValueChange={(v: any) => setView(v as 'list' | 'map')}
+            onValueChange={(v: any) => setView(v as "list" | "map")}
           >
             <div className="flex justify-between items-center mb-4">
               <TabsList>
@@ -290,7 +306,7 @@ export default function MapPage() {
               <div className="bg-muted rounded-lg overflow-hidden h-[600px]">
                 <MapComponent
                   city={city}
-                  mapRef = {mapRef}
+                  mapRef={mapRef}
                   stations={filteredStations}
                   selectedStation={selectedStation}
                   onSelectStation={setSelectedStation}
@@ -305,7 +321,7 @@ export default function MapPage() {
                       key={station.id}
                       mapRef={mapRef}
                       station={station}
-                      handleTabChange={() => handleTabChange('map')}
+                      handleTabChange={() => handleTabChange("map")}
                       selected={selectedStation === station.id}
                       onSelect={() => setSelectedStation(station.id)}
                       setView={setView}

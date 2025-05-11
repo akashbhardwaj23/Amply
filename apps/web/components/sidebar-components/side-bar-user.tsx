@@ -27,6 +27,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { useUser } from "@civic/auth-web3/react"
+import { Loader } from "../ui/loader"
 export function SideBarUser({
   user,
 }: {
@@ -37,6 +39,7 @@ export function SideBarUser({
   }
 }) {
   const { isMobile } = useSidebar()
+  const {signOut, isLoading} = useUser()
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -78,13 +81,6 @@ export function SideBarUser({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
-                <Sparkles />
-                Upgrade to Pro
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
                 <BadgeCheck />
                 Account
               </DropdownMenuItem>
@@ -98,9 +94,15 @@ export function SideBarUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <LogOut />
-              Log out
+            <DropdownMenuItem onClick={async () => {
+              await signOut();
+            }}>
+             {isLoading ? (
+              <>
+               <LogOut />
+               Log out
+              </>
+             ): (<Loader className="h-4 w-4" />)}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

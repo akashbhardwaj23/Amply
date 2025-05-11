@@ -142,7 +142,7 @@ export default function RegisterStationPage() {
       );
       setProvider(provider);
       const anchorProvider = getProvider();
-      const program = new Program(idl as any, programId, anchorProvider);
+      const program = new Program(idl as any, anchorProvider);
 
       // Find PDA for charger account
       const [chargerPda] = await web3.PublicKey.findProgramAddress(
@@ -161,10 +161,11 @@ export default function RegisterStationPage() {
       console.log('Charger PDA:', chargerPda.toBase58());
       console.log('Accounts:', {
         charger: chargerPda.toBase58(),
-        payer: phantom.publicKey.toBase58(),
+        payer: phantom.publicKey?.toBase58(),
         systemProgram: web3.SystemProgram.programId.toBase58(),
       });
 
+      console.log(viewPort)
       await program.methods
         .createCharger(
           data.name,
@@ -177,8 +178,8 @@ export default function RegisterStationPage() {
           new BN(data.power),
           new BN(data.price),
           data.connectorTypes,
-          data.latitude,
-          data.longitude
+          viewPort.latitude,
+          viewPort.longitude
         )
         .accounts({
           charger: chargerPda,
@@ -190,7 +191,7 @@ export default function RegisterStationPage() {
       console.log('Charger PDA:', chargerPda.toBase58());
       console.log('Accounts:', {
         charger: chargerPda.toBase58(),
-        payer: phantom.publicKey.toBase58(),
+        payer: phantom.publicKey?.toBase58(),
         systemProgram: web3.SystemProgram.programId.toBase58(),
       });
 
