@@ -5,20 +5,20 @@ import {
   CardFooter,
   CardTitle,
   CardHeader,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { SignInButton } from "@civic/auth-web3/react";
-import { getUser } from "@civic/auth-web3/nextjs";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { redirect } from "next/navigation";
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { SignInButton } from '@civic/auth-web3/react';
+import { getUser } from '@civic/auth-web3/nextjs';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { redirect } from 'next/navigation';
 
 export default async function SignIn() {
   const user = await getUser();
 
   if (user) {
-    redirect("/");
+    redirect('/');
   }
 
   return (
@@ -26,7 +26,7 @@ export default async function SignIn() {
       <div>
         <Card
           style={{
-            width: "20rem",
+            width: '20rem',
           }}
         >
           <CardHeader>
@@ -45,8 +45,8 @@ export default async function SignIn() {
 
             {!user && (
               <div className="flex justify-center items-center">
-                <Button variant={"secondary"}>
-                  <SignInButton style={{ border: "0px" }} />
+                <Button variant={'secondary'}>
+                  <SignInButton style={{ border: '0px' }} />
                 </Button>
               </div>
             )}

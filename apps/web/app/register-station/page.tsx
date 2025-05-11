@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { Button } from "@/components/ui/button";
-import { toast } from "@/components/ui/use-toast";
-import { FieldErrors } from "react-hook-form";
+import { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/use-toast';
+import { FieldErrors } from 'react-hook-form';
 
 import {
   Form,
@@ -17,19 +17,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Separator } from "@/components/ui/separator";
-import { Check, MapPin } from "lucide-react";
+} from '@/components/ui/card';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Separator } from '@/components/ui/separator';
+import { Check, MapPin } from 'lucide-react';
 
 // --- Anchor/Solana Imports ---
 import {
@@ -38,12 +38,12 @@ import {
   Program,
   setProvider,
   getProvider,
-} from "@coral-xyz/anchor";
-import BN from "bn.js";
-import idl from "@/idl/ev_charging.json"; // <-- adjust path if needed
-import { Map, MapRef, Marker, MapLayerMouseEvent } from "react-map-gl/maplibre";
-import "maplibre-gl/dist/maplibre-gl.css";
-import { Label } from "@/components/ui/label";
+} from '@coral-xyz/anchor';
+import BN from 'bn.js';
+import idl from '@/idl/ev_charging.json'; // <-- adjust path if needed
+import { Map, MapRef, Marker, MapLayerMouseEvent } from 'react-map-gl/maplibre';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import { Label } from '@/components/ui/label';
 
 // const programId = new web3.PublicKey(
 //   'CbhmEH9wJTGShWpyHebvj15DXFJu7TkMK7pXydc9qoQ1'
@@ -142,7 +142,7 @@ export default function RegisterStationPage() {
       );
       setProvider(provider);
       const anchorProvider = getProvider();
-      const program = new Program(idl as any, programId, anchorProvider);
+      const program = new Program(idl, anchorProvider);
 
       // Find PDA for charger account
       const [chargerPda] = await web3.PublicKey.findProgramAddress(
@@ -244,7 +244,6 @@ export default function RegisterStationPage() {
     });
   }
 
-
   // --- UI ---
   return (
     <div className="container py-10">
@@ -262,10 +261,10 @@ export default function RegisterStationPage() {
         <div className="mb-8">
           <div className="flex justify-between">
             <div
-              className={`flex-1 flex flex-col items-center ${step >= 1 ? "text-rose-600" : "text-muted-foreground"}`}
+              className={`flex-1 flex flex-col items-center ${step >= 1 ? 'text-rose-600' : 'text-muted-foreground'}`}
             >
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${step >= 1 ? "bg-rose-100 dark:bg-rose-900" : "bg-muted"}`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${step >= 1 ? 'bg-rose-100 dark:bg-rose-900' : 'bg-muted'}`}
               >
                 {step > 1 ? <Check className="h-5 w-5" /> : <span>1</span>}
               </div>
@@ -274,15 +273,15 @@ export default function RegisterStationPage() {
 
             <div className="flex-1 flex justify-center">
               <div
-                className={`h-0.5 w-full self-center ${step >= 2 ? "bg-rose-600" : "bg-muted"}`}
+                className={`h-0.5 w-full self-center ${step >= 2 ? 'bg-rose-600' : 'bg-muted'}`}
               />
             </div>
 
             <div
-              className={`flex-1 flex flex-col items-center ${step >= 2 ? "text-rose-600" : "text-muted-foreground"}`}
+              className={`flex-1 flex flex-col items-center ${step >= 2 ? 'text-rose-600' : 'text-muted-foreground'}`}
             >
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${step >= 2 ? "bg-rose-100 dark:bg-rose-900" : "bg-muted"}`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${step >= 2 ? 'bg-rose-100 dark:bg-rose-900' : 'bg-muted'}`}
               >
                 {step > 2 ? <Check className="h-5 w-5" /> : <span>2</span>}
               </div>
@@ -290,14 +289,14 @@ export default function RegisterStationPage() {
             </div>
             <div className="flex-1 flex justify-center">
               <div
-                className={`h-0.5 w-full self-center ${step >= 3 ? "bg-rose-600" : "bg-muted"}`}
+                className={`h-0.5 w-full self-center ${step >= 3 ? 'bg-rose-600' : 'bg-muted'}`}
               />
             </div>
             <div
-              className={`flex-1 flex flex-col items-center ${step >= 3 ? "text-rose-600" : "text-muted-foreground"}`}
+              className={`flex-1 flex flex-col items-center ${step >= 3 ? 'text-rose-600' : 'text-muted-foreground'}`}
             >
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${step >= 3 ? "bg-rose-100 dark:bg-rose-900" : "bg-muted"}`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${step >= 3 ? 'bg-rose-100 dark:bg-rose-900' : 'bg-muted'}`}
               >
                 {step > 3 ? <Check className="h-5 w-5" /> : <span>3</span>}
               </div>
@@ -305,14 +304,14 @@ export default function RegisterStationPage() {
             </div>
             <div className="flex-1 flex justify-center">
               <div
-                className={`h-0.5 w-full self-center ${step >= 4 ? "bg-rose-600" : "bg-muted"}`}
+                className={`h-0.5 w-full self-center ${step >= 4 ? 'bg-rose-600' : 'bg-muted'}`}
               />
             </div>
             <div
-              className={`flex-1 flex flex-col items-center ${step >= 4 ? "text-rose-600" : "text-muted-foreground"}`}
+              className={`flex-1 flex flex-col items-center ${step >= 4 ? 'text-rose-600' : 'text-muted-foreground'}`}
             >
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${step >= 4 ? "bg-rose-100 dark:bg-rose-900" : "bg-muted"}`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${step >= 4 ? 'bg-rose-100 dark:bg-rose-900' : 'bg-muted'}`}
               >
                 <span>4</span>
               </div>
@@ -459,9 +458,9 @@ export default function RegisterStationPage() {
                       onDblClick={(e) => handleDoubleClick(e)}
                       ref={myMapRef}
                       style={{
-                        width: "100%",
-                        height: "100%",
-                        position: "absolute",
+                        width: '100%',
+                        height: '100%',
+                        position: 'absolute',
                         zIndex: 10,
                       }}
                       mapStyle="https://tiles.openfreemap.org/styles/liberty"
@@ -488,7 +487,6 @@ export default function RegisterStationPage() {
                   {viewPort && (
                     <div className="flex justify-between items-center gap-4 text-sm">
                       <div className="flex flex-col justify-center items-center gap-2">
-                       
                         <span className="px-4 py-2 bg-primary rounded-lg">
                           {viewPort.longitude}
                         </span>
@@ -658,45 +656,45 @@ export default function RegisterStationPage() {
                     <h3 className="font-medium">Station Details</h3>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                       <div className="text-muted-foreground">Name:</div>
-                      <div>{form.getValues("name")}</div>
+                      <div>{form.getValues('name')}</div>
                       <div className="text-muted-foreground">Address:</div>
-                      <div>{`${form.getValues("address")}, ${form.getValues("city")}, ${form.getValues("state")} ${form.getValues("zip")}`}</div>
+                      <div>{`${form.getValues('address')}, ${form.getValues('city')}, ${form.getValues('state')} ${form.getValues('zip')}`}</div>
                       <div className="text-muted-foreground">Description:</div>
-                      <div>{form.getValues("description") || "N/A"}</div>
+                      <div>{form.getValues('description') || 'N/A'}</div>
                     </div>
 
                     <Separator />
 
                     <div className="space-y-4">
-                    <h3 className="font-medium">Location Details</h3>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                    <div className="text-muted-foreground">Longitude:</div>
-                    <div>{viewPort.longitude}</div>
-                    <div className="text-muted-foreground">Latitude:</div>
-                      <div>{viewPort.latitude}</div>
-                    </div>
+                      <h3 className="font-medium">Location Details</h3>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <div className="text-muted-foreground">Longitude:</div>
+                        <div>{viewPort.longitude}</div>
+                        <div className="text-muted-foreground">Latitude:</div>
+                        <div>{viewPort.latitude}</div>
+                      </div>
                     </div>
 
                     <h3 className="font-medium">Technical Specifications</h3>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                       <div className="text-muted-foreground">Charger Type:</div>
                       <div>
-                        {form.getValues("chargerType") === "level1" &&
-                          "Level 1 (120V)"}
-                        {form.getValues("chargerType") === "level2" &&
-                          "Level 2 (240V)"}
-                        {form.getValues("chargerType") === "dcFast" &&
-                          "DC Fast Charging"}
-                        {form.getValues("chargerType") === "other" && "Other"}
+                        {form.getValues('chargerType') === 'level1' &&
+                          'Level 1 (120V)'}
+                        {form.getValues('chargerType') === 'level2' &&
+                          'Level 2 (240V)'}
+                        {form.getValues('chargerType') === 'dcFast' &&
+                          'DC Fast Charging'}
+                        {form.getValues('chargerType') === 'other' && 'Other'}
                       </div>
                       <div className="text-muted-foreground">Power Output:</div>
-                      <div>{form.getValues("power")} kW</div>
+                      <div>{form.getValues('power')} kW</div>
                       <div className="text-muted-foreground">Price:</div>
-                      <div>{form.getValues("price")} SOL/kWh</div>
+                      <div>{form.getValues('price')} SOL/kWh</div>
                       <div className="text-muted-foreground">
                         Connector Types:
                       </div>
-                      <div>{form.getValues("connectorTypes")}</div>
+                      <div>{form.getValues('connectorTypes')}</div>
                     </div>
                   </div>
 
