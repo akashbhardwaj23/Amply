@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::{program::invoke, system_instruction};
 use anchor_spl::token::{self, Mint, MintTo, Token, TokenAccount};
 
-declare_id!("BzyxNcedD9nnqVD34p2maBDEWfrvn6s618zreFQwrPyJ");
+declare_id!("3t62RkND3XUGD1K6hcETeQEDYwG3E45juB2qYprxpxXv");
 
 #[program]
 pub mod ev_charging {
@@ -20,6 +20,8 @@ pub mod ev_charging {
         power: u64,
         price: u64,
         connector_types: String,
+        latitude: f64, // New parameter
+        longitude: f64,
     ) -> Result<()> {
         let charger = &mut ctx.accounts.charger;
 
@@ -34,6 +36,8 @@ pub mod ev_charging {
         charger.power = power;
         charger.price = price;
         charger.connector_types = connector_types;
+        charger.latitude = latitude; // Store new field
+        charger.longitude = longitude; // Store new field
 
         Ok(())
     }
@@ -58,6 +62,8 @@ pub mod ev_charging {
         power: u64,
         price: u64,
         connector_types: String,
+        latitude: f64,  // New parameter
+        longitude: f64, // New parameter
     ) -> Result<()> {
         let charger = &mut ctx.accounts.charger;
 
@@ -77,6 +83,8 @@ pub mod ev_charging {
         charger.power = power;
         charger.price = price;
         charger.connector_types = connector_types;
+        charger.longitude = longitude; 
+        charger.latitude = latitude; 
 
         Ok(())
     }
@@ -312,11 +320,32 @@ pub struct Charger {
     pub power: u64,
     pub price: u64,
     pub connector_types: String,
+    pub latitude: f64,  // New field
+    pub longitude: f64, // New field
 }
 
 impl Charger {
-    pub const MAX_SIZE: usize =
-        32 + 4 + 50 + 4 + 100 + 4 + 50 + 4 + 20 + 4 + 10 + 4 + 200 + 4 + 50 + 8 + 8 + 4 + 50;
+    pub const MAX_SIZE: usize = 32
+        + 4
+        + 50
+        + 4
+        + 100
+        + 4
+        + 50
+        + 4
+        + 20
+        + 4
+        + 10
+        + 4
+        + 200
+        + 4
+        + 50
+        + 8
+        + 8
+        + 4
+        + 50
+        + 8
+        + 8;
 }
 
 #[account]

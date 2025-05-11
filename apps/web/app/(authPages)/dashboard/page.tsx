@@ -1,296 +1,361 @@
-import { Avatar,AvatarFallback,AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import { getUser } from "@civic/auth-web3/nextjs";
-import { Battery, Calendar, ChartCandlestick, Clock, CreditCard, History, MapPin, PlugZap, Zap } from "lucide-react";
-import Link from "next/link"
+'use client';
 
-const DashBoardPage = async() => {
-    const user = await getUser()
+import { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/use-toast';
+import { FieldErrors } from 'react-hook-form';
 
-    if(!user){
-        return (
-            <div>
-                User Not Found
-            </div>
-        )
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Separator } from '@/components/ui/separator';
+import { Check, MapPin } from 'lucide-react';
+
+// --- Anchor/Solana Imports ---
+import {
+  web3,
+  AnchorProvider,
+  Program,
+  setProvider,
+  getProvider,
+} from '@coral-xyz/anchor';
+import BN from 'bn.js';
+import idl from '@/idl/ev_charging.json'; // <--- adjust path if needed
+import { Map, MapRef, Marker, MapLayerMouseEvent } from 'react-map-gl/maplibre';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import { Label } from '@/components/ui/label';
+
+// Program ID from your new IDL
+const programId = new web3.PublicKey(idl.address);
+
+const network = 'https://api.devnet.solana.com'; // or your cluster
+
+const getPhantomProvider = (): PhantomProvider | undefined => {
+  if (typeof window !== 'undefined' && 'solana' in window) {
+    const provider = window.solana as PhantomProvider;
+    if (provider.isPhantom) return provider;
+  }
+  window.open('https://phantom.app/', '_blank');
+  return undefined;
+};
+
+const stationFormSchema = z.object({
+  name: z
+    .string()
+    .min(3, { message: 'Station name must be at least 3 characters.' }),
+  address: z
+    .string()
+    .min(5, { message: 'Address must be at least 5 characters.' }),
+  city: z.string().min(2, { message: 'City is required.' }),
+  state: z.string().min(2, { message: 'State is required.' }),
+  zip: z.string().min(5, { message: 'ZIP code is required.' }),
+  description: z.string().optional(),
+  chargerType: z.enum(['level1', 'level2', 'dcFast', 'other'], {
+    required_error: 'You need to select a charger type.',
+  }),
+  power: z.coerce.number().min(1, { message: 'Power must be at least 1 kW.' }),
+  price: z.coerce
+    .number()
+    .min(0.01, { message: 'Price must be at least 0.01 SOL.' }),
+  connectorTypes: z
+    .string()
+    .min(1, { message: 'At least one connector type is required.' }),
+  latitude: z.coerce.number(),
+  longitude: z.coerce.number(),
+});
+
+type StationFormValues = z.infer<typeof stationFormSchema>;
+
+interface ViewPortType {
+  latitude: number;
+  longitude: number;
+}
+
+export default function RegisterStationPage() {
+  const router = useRouter();
+  const [step, setStep] = useState(1);
+  const myMapRef = useRef<MapRef | null>(null);
+  const [viewPort, setViewPort] = useState<ViewPortType>({
+    latitude: 28.6448,
+    longitude: 77.216721,
+  });
+
+  const form = useForm<StationFormValues>({
+    resolver: zodResolver(stationFormSchema),
+    defaultValues: {
+      name: '',
+      address: '',
+      city: '',
+      state: '',
+      zip: '',
+      description: '',
+      chargerType: 'level2',
+      power: 7,
+      price: 0.25,
+      connectorTypes: 'Type 2',
+      latitude: 28.6448,
+      longitude: 77.216721,
+    },
+  });
+
+  // --- Anchor integration onSubmit ---
+  async function onSubmit(data: StationFormValues) {
+    console.log('111');
+    const phantom = getPhantomProvider();
+    if (!phantom) {
+      alert('Please install Phantom Wallet!');
+      return;
     }
-    return (
-        <div className="p-6 lg:p-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-                <Button variant="outline" size="sm">
-                  <History className="mr-2 h-4 w-4" />
-                  View All Activity
-                </Button>
-              </div>
-    
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={user.picture} alt={user.name} />
-                        <AvatarFallback>
-                          {user.name?.charAt(0)!}
-                          {user.name?.split(" ")[1].charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <CardTitle>{user.name}</CardTitle>
-                        <CardDescription>{user.email}</CardDescription>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      Edit Profile
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center">
-                      <div className="mr-4 rounded-full bg-rose-100 p-2 dark:bg-rose-900">
-                        <CreditCard className="h-4 w-4 text-rose-600 dark:text-rose-400" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Token Balance</p>
-                        <p className="text-2xl font-bold">{userData.tokenBalance} SOL</p>
-                      </div>
 
-                      <div className="p-2 flex flex-col justify-between items-start gap-2">
-                        <Label className="text-[10px]">Use the Token Balance</Label>
-                        <Switch  className="text-primary bg-white"/>
-                      </div>
-                    </div>
-                    <Button size="sm">
-                      <Zap className="mr-2 h-4 w-4" />
-                      Add Tokens
-                    </Button>
-                  </div>
+    try {
+      await phantom.connect();
 
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center">
-                      <div className="mr-4 rounded-full bg-rose-100 p-2 dark:bg-rose-900">
-                      <ChartCandlestick className="h-4 w-4 text-rose-600 dark:text-rose-400" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Solana Balance</p>
-                        <p className="text-2xl font-bold">{userData.tokenBalance} SOL</p>
-                      </div>
-                    </div>
-                  </div>
-    
-                  <Separator className="my-4" />
-    
-                  <div>
-                    <h3 className="text-lg font-medium mb-3">Previous Charging Sessions</h3>
-                    <div className="space-y-3">
-                      {userData.previousChargingSessions.map((session) => (
-                        <div key={session.id} className="flex items-center justify-between bg-muted/50 p-3 rounded-lg">
-                          <div>
-                            <p className="font-medium">{session.location}</p>
-                            <div className="flex items-center text-sm text-muted-foreground">
-                              <Calendar className="mr-1 h-3 w-3" />
-                              <span>{session.date}</span>
-                              <span className="mx-2">•</span>
-                              <Clock className="mr-1 h-3 w-3" />
-                              <span>{session.duration}</span>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-medium">{session.cost}</p>
-                            <p className="text-sm text-muted-foreground">{session.energy}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+      const connection = new web3.Connection(network, 'confirmed');
+      const provider = new AnchorProvider(
+        connection,
+        phantom,
+        AnchorProvider.defaultOptions()
+      );
+      setProvider(provider);
+      const anchorProvider = getProvider();
+      const program = new Program(idl as any, programId, anchorProvider);
 
-                  <div className="mt-4 flex justify-end">
-                    <Button variant={"default"} className="px-8">
-                        <PlugZap className="mr-2 h-4 w-4"/>
-                        <span>Charge</span></Button>
-                  </div>
-                </CardContent>
-              </Card>
-    
-              <Card>
-                <CardHeader>
-                  <CardTitle>Charging Statistics</CardTitle>
-                  <CardDescription>Your charging activity over the past month</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-muted/50 p-4 rounded-lg">
-                      <p className="text-sm text-muted-foreground mb-1">Total Energy</p>
-                      <p className="text-2xl font-bold">245.8 kWh</p>
-                    </div>
-                    <div className="bg-muted/50 p-4 rounded-lg">
-                      <p className="text-sm text-muted-foreground mb-1">Total Spent</p>
-                      <p className="text-2xl font-bold">61.45 SOL</p>
-                    </div>
-                    <div className="bg-muted/50 p-4 rounded-lg">
-                      <p className="text-sm text-muted-foreground mb-1">Sessions</p>
-                      <p className="text-2xl font-bold">12</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+      // Find PDA for charger account
+      const [chargerPda] = await web3.PublicKey.findProgramAddress(
+        [Buffer.from(data.name)],
+        programId
+      );
 
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Nearby Charger</CardTitle>
-                  <CardDescription>Currently closest to your location</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="bg-rose-50 dark:bg-rose-950/20 p-4 rounded-lg border border-rose-200 dark:border-rose-800">
-                    <div className="flex justify-between items-start mb-3">
-                      <h3 className="font-bold text-lg">{chargerData.name}</h3>
-                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
-                        {chargerData.status}
-                      </span>
-                    </div>
-    
-                    <div className="flex items-center text-sm text-muted-foreground mb-4">
-                      <MapPin className="mr-1 h-4 w-4" />
-                      <span>{chargerData.location}</span>
-                      <span className="mx-2">•</span>
-                      <span>{chargerData.distance}</span>
-                    </div>
-    
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Power Output</p>
-                        <p className="font-medium">{chargerData.power}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Price</p>
-                        <p className="font-medium">{chargerData.price}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Connector Types</p>
-                        <p className="font-medium">{chargerData.connectorType}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Availability</p>
-                        <p className="font-medium">
-                          {chargerData.currentUsers}/{chargerData.maxUsers} in use
-                        </p>
-                      </div>
-                    </div>
-    
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-1">
-                        <p className="text-sm font-medium">Your Vehicle Battery</p>
-                        <p className="text-sm">{chargerData.batteryLevel}%</p>
-                      </div>
-                      <Progress value={chargerData.batteryLevel} className="h-2" />
-                    </div>
-    
-                    <Button className="w-full mb-2">
-                      <Zap className="mr-2 h-4 w-4" />
-                      Start Charging
-                    </Button>
+      // Map charger type to display string
+      const chargerTypeMap: { [key: string]: string } = {
+        level1: 'Level 1 (120V)',
+        level2: 'Level 2 (240V)',
+        dcFast: 'DC Fast Charging',
+        other: 'Other',
+      };
 
-                   <Link href={"/map"}>
-                   <Button variant={"outline"} className="w-full">
-                      
-                      Find Another Charger
-                    </Button>
-                   </Link>
-                  </div>
-                </CardContent>
-              </Card>
-    
-              <Card>
-                <CardHeader>
-                  <CardTitle>Charging Rewards</CardTitle>
-                  <CardDescription>Earn tokens with every charge</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <Battery className="mr-2 h-4 w-4 text-emerald-500" />
-                        <span className="text-sm font-medium">Next Reward</span>
-                      </div>
-                      <span className="font-bold">5.0 SOL</span>
-                    </div>
-    
-                    <div className="bg-muted/50 p-3 rounded-lg">
-                      <p className="text-sm mb-2">
-                        Refer friends and earn 10 SOL for each new user who completes their first charging session.
-                      </p>
-                      <Button variant="outline" size="sm" className="w-full">
-                        Share Referral Code
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+      console.log('Charger PDA:', chargerPda.toBase58());
+      console.log('Accounts:', {
+        charger: chargerPda.toBase58(),
+        payer: phantom.publicKey.toBase58(),
+        systemProgram: web3.SystemProgram.programId.toBase58(),
+      });
+
+      await program.methods
+        .createCharger(
+          data.name,
+          data.address,
+          data.city,
+          data.state,
+          data.zip,
+          data.description || '',
+          chargerTypeMap[data.chargerType],
+          new BN(data.power),
+          new BN(data.price),
+          data.connectorTypes,
+          data.latitude,
+          data.longitude
+        )
+        .accounts({
+          charger: chargerPda,
+          payer: phantom.publicKey,
+          systemProgram: web3.SystemProgram.programId,
+        })
+        .rpc();
+
+      console.log('Charger PDA:', chargerPda.toBase58());
+      console.log('Accounts:', {
+        charger: chargerPda.toBase58(),
+        payer: phantom.publicKey.toBase58(),
+        systemProgram: web3.SystemProgram.programId.toBase58(),
+      });
+
+      alert('Charger registered on Solana!');
+      router.push('/register-station/success');
+    } catch (err: any) {
+      console.error(err);
+      toast({
+        variant: 'destructive',
+        title: 'Transaction Failed To Execute',
+        description: err.message || err,
+      });
+    }
+  }
+
+  const handleDoubleClick = (e: MapLayerMouseEvent) => {
+    e.preventDefault();
+    setViewPort({
+      latitude: e.lngLat.lat,
+      longitude: e.lngLat.lng,
+    });
+    form.setValue('latitude', e.lngLat.lat);
+    form.setValue('longitude', e.lngLat.lng);
+  };
+
+  function onError(errors: FieldErrors<StationFormValues>) {
+    function getFirstErrorMessage(errors: FieldErrors<any>): string | null {
+      for (const key in errors) {
+        const errorOrNested = errors[key];
+        if (!errorOrNested) continue;
+        if (
+          'message' in errorOrNested &&
+          typeof errorOrNested.message === 'string'
+        ) {
+          return errorOrNested.message;
+        }
+        if (typeof errorOrNested === 'object') {
+          const nestedMessage = getFirstErrorMessage(
+            errorOrNested as FieldErrors<any>
+          );
+          if (nestedMessage) return nestedMessage;
+        }
+      }
+      return null;
+    }
+    const message = getFirstErrorMessage(errors) || 'Please check all fields.';
+    toast({
+      variant: 'destructive',
+      title: 'Form Error',
+      description: message,
+    });
+  }
+
+  // --- UI ---
+  return (
+    <div className="container py-10">
+      <div className="max-w-3xl mx-auto">
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold mb-2">
+            Register Your Charging Station
+          </h1>
+          <p className="text-muted-foreground">
+            Join our network and start earning Solana tokens for every charging
+            session
+          </p>
         </div>
-      )
-}
- 
-export default DashBoardPage;
 
+        {/* Progress Steps UI omitted for brevity */}
 
-
-// Mock user data
-const userData = {
-  name: "Alex Johnson",
-  email: "alex.johnson@example.com",
-  avatar: "/placeholder.svg?height=40&width=40",
-  tokenBalance: 125.75,
-  previousChargingSessions: [
-    {
-      id: "cs-001",
-      date: "May 8, 2025",
-      location: "SolCharge Downtown",
-      duration: "45 min",
-      energy: "32.5 kWh",
-      cost: "8.13 SOL",
-    },
-    {
-      id: "cs-002",
-      date: "May 3, 2025",
-      location: "EcoCharge Plaza",
-      duration: "30 min",
-      energy: "22.1 kWh",
-      cost: "6.63 SOL",
-    },
-    {
-      id: "cs-003",
-      date: "Apr 28, 2025",
-      location: "GreenWatt Station",
-      duration: "60 min",
-      energy: "45.8 kWh",
-      cost: "10.08 SOL",
-    },
-  ],
-}
-
-// Mock charger data
-const chargerData = {
-  id: "charger-001",
-  name: "SolCharge Downtown #5",
-  location: "123 Main St, Anytown",
-  status: "Available",
-  power: "150 kW",
-  price: "0.25 SOL/kWh",
-  connectorType: "CCS, CHAdeMO",
-  currentUsers: 0,
-  maxUsers: 2,
-  distance: "0.3 miles away",
-  batteryLevel: 42,
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit, onError)}>
+            {step === 1 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Station Details</CardTitle>
+                  <CardDescription>
+                    Provide information about your charging station location
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* ...other fields... */}
+                  <div className="flex justify-end">
+                    <Button type="button" onClick={() => setStep(2)}>
+                      Continue
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {step === 2 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Station Map Details</CardTitle>
+                  <CardDescription>
+                    Provide Location information about your charging station
+                  </CardDescription>
+                </CardHeader>
+                <div className="bg-muted rounded-lg overflow-hidden h-[600px] mb-4">
+                  <div className="relative h-full w-full bg-gray-100 dark:bg-gray-800">
+                    <Map
+                      initialViewState={{
+                        ...viewPort,
+                        zoom: 14,
+                      }}
+                      interactive
+                      id="mapStation"
+                      onDblClick={handleDoubleClick}
+                      ref={myMapRef}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        position: 'absolute',
+                        zIndex: 10,
+                      }}
+                      mapStyle="https://tiles.openfreemap.org/styles/liberty"
+                    >
+                      <Marker
+                        latitude={viewPort.latitude}
+                        longitude={viewPort.longitude}
+                      >
+                        <MapPin className="h-8 w-8 text-rose-600" />
+                      </Marker>
+                    </Map>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="latitude"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Latitude</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="longitude"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Longitude</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="flex justify-end mt-4">
+                  <Button type="button" onClick={() => setStep(3)}>
+                    Continue
+                  </Button>
+                </div>
+              </Card>
+            )}
+            {/* ...other steps... */}
+            {step === 4 && (
+              <div className="flex justify-end">
+                <Button type="submit">Register Station</Button>
+              </div>
+            )}
+          </form>
+        </Form>
+      </div>
+    </div>
+  );
 }
