@@ -113,8 +113,6 @@ export default function RegisterStationPage() {
       power: 7,
       price: 0.25,
       connectorTypes: 'Type 2',
-      latitude: 28.6448,
-      longitude: 77.216721,
     },
   });
 
@@ -173,8 +171,8 @@ export default function RegisterStationPage() {
           new BN(data.power),
           new BN(data.price),
           data.connectorTypes,
-          data.latitude,
-          data.longitude
+          viewPort.latitude,
+          viewPort.longitude
         )
         .accounts({
           charger: chargerPda,
