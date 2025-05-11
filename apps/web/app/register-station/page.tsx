@@ -49,47 +49,50 @@ import { Label } from "@/components/ui/label";
 //   'CbhmEH9wJTGShWpyHebvj15DXFJu7TkMK7pXydc9qoQ1'
 // ); // <-- replace with your deployed program ID
 
+// Program ID from your new IDL
 const programId = new web3.PublicKey(idl.address);
 
-const network = "http://127.0.0.1:8899"; // or localhost
+const network = 'https://api.devnet.solana.com'; // or your cluster
 
 const getPhantomProvider = (): PhantomProvider | undefined => {
-  if (typeof window !== "undefined" && "solana" in window) {
+  if (typeof window !== 'undefined' && 'solana' in window) {
     const provider = window.solana as PhantomProvider;
     if (provider.isPhantom) return provider;
   }
-  window.open("https://phantom.app/", "_blank");
+  window.open('https://phantom.app/', '_blank');
   return undefined;
 };
 
 const stationFormSchema = z.object({
   name: z
     .string()
-    .min(3, { message: "Station name must be at least 3 characters." }),
+    .min(3, { message: 'Station name must be at least 3 characters.' }),
   address: z
     .string()
-    .min(5, { message: "Address must be at least 5 characters." }),
-  city: z.string().min(2, { message: "City is required." }),
-  state: z.string().min(2, { message: "State is required." }),
-  zip: z.string().min(5, { message: "ZIP code is required." }),
+    .min(5, { message: 'Address must be at least 5 characters.' }),
+  city: z.string().min(2, { message: 'City is required.' }),
+  state: z.string().min(2, { message: 'State is required.' }),
+  zip: z.string().min(5, { message: 'ZIP code is required.' }),
   description: z.string().optional(),
-  chargerType: z.enum(["level1", "level2", "dcFast", "other"], {
-    required_error: "You need to select a charger type.",
+  chargerType: z.enum(['level1', 'level2', 'dcFast', 'other'], {
+    required_error: 'You need to select a charger type.',
   }),
-  power: z.coerce.number().min(1, { message: "Power must be at least 1 kW." }),
+  power: z.coerce.number().min(1, { message: 'Power must be at least 1 kW.' }),
   price: z.coerce
     .number()
-    .min(0.01, { message: "Price must be at least 0.01 SOL." }),
+    .min(0.01, { message: 'Price must be at least 0.01 SOL.' }),
   connectorTypes: z
     .string()
-    .min(1, { message: "At least one connector type is required." }),
+    .min(1, { message: 'At least one connector type is required.' }),
+  latitude: z.coerce.number(),
+  longitude: z.coerce.number(),
 });
 
 type StationFormValues = z.infer<typeof stationFormSchema>;
 
 interface ViewPortType {
-  longitude: number;
   latitude: number;
+  longitude: number;
 }
 
 export default function RegisterStationPage() {
@@ -97,46 +100,49 @@ export default function RegisterStationPage() {
   const [step, setStep] = useState(1);
   const myMapRef = useRef<MapRef | null>(null);
   const [viewPort, setViewPort] = useState<ViewPortType>({
-    longitude: 77.216721,
     latitude: 28.6448,
+    longitude: 77.216721,
   });
 
   const form = useForm<StationFormValues>({
     resolver: zodResolver(stationFormSchema),
     defaultValues: {
-      name: "",
-      address: "",
-      city: "",
-      state: "",
-      zip: "",
-      description: "",
-      chargerType: "level2",
+      name: '',
+      address: '',
+      city: '',
+      state: '',
+      zip: '',
+      description: '',
+      chargerType: 'level2',
       power: 7,
       price: 0.25,
-      connectorTypes: "Type 2",
+      connectorTypes: 'Type 2',
+      latitude: viewPort.latitude,
+      longitude: viewPort.longitude,
     },
   });
 
   // --- Anchor integration onSubmit ---
   async function onSubmit(data: StationFormValues) {
+    console.log('111');
     const phantom = getPhantomProvider();
     if (!phantom) {
-      alert("Please install Phantom Wallet!");
+      alert('Please install Phantom Wallet!');
       return;
     }
 
     try {
       await phantom.connect();
-      const connection = new web3.Connection(network, "confirmed");
+
+      const connection = new web3.Connection(network, 'confirmed');
       const provider = new AnchorProvider(
         connection,
         phantom,
         AnchorProvider.defaultOptions()
       );
       setProvider(provider);
-
       const anchorProvider = getProvider();
-      const program = new Program(idl, anchorProvider);
+      const program = new Program(idl as any, programId, anchorProvider);
 
       // Find PDA for charger account
       const [chargerPda] = await web3.PublicKey.findProgramAddress(
@@ -146,11 +152,18 @@ export default function RegisterStationPage() {
 
       // Map charger type to display string
       const chargerTypeMap: { [key: string]: string } = {
-        level1: "Level 1 (120V)",
-        level2: "Level 2 (240V)",
-        dcFast: "DC Fast Charging",
-        other: "Other",
+        level1: 'Level 1 (120V)',
+        level2: 'Level 2 (240V)',
+        dcFast: 'DC Fast Charging',
+        other: 'Other',
       };
+
+      console.log('Charger PDA:', chargerPda.toBase58());
+      console.log('Accounts:', {
+        charger: chargerPda.toBase58(),
+        payer: phantom.publicKey.toBase58(),
+        systemProgram: web3.SystemProgram.programId.toBase58(),
+      });
 
       await program.methods
         .createCharger(
@@ -159,27 +172,35 @@ export default function RegisterStationPage() {
           data.city,
           data.state,
           data.zip,
-          data.description || "",
+          data.description || '',
           chargerTypeMap[data.chargerType],
           new BN(data.power),
-          data.price,
-          data.connectorTypes
+          new BN(data.price),
+          data.connectorTypes,
+          data.latitude,
+          data.longitude
         )
         .accounts({
           charger: chargerPda,
-          payer: phantom.publicKey!,
+          payer: phantom.publicKey,
           systemProgram: web3.SystemProgram.programId,
         })
         .rpc();
 
-      alert("Charger registered on Solana!");
-      router.push("/register-station/success");
+      console.log('Charger PDA:', chargerPda.toBase58());
+      console.log('Accounts:', {
+        charger: chargerPda.toBase58(),
+        payer: phantom.publicKey.toBase58(),
+        systemProgram: web3.SystemProgram.programId.toBase58(),
+      });
+
+      alert('Charger registered on Solana!');
+      router.push('/register-station/success');
     } catch (err: any) {
       console.error(err);
-      // alert("Transaction failed: " + (err.message || err));
       toast({
-        variant: "destructive",
-        title: "Transaction Failed To Execute",
+        variant: 'destructive',
+        title: 'Transaction Failed To Execute',
         description: err.message || err,
       });
     }
@@ -187,32 +208,26 @@ export default function RegisterStationPage() {
 
   const handleDoubleClick = (e: MapLayerMouseEvent) => {
     e.preventDefault();
-    console.log(e.lngLat);
     setViewPort({
-      longitude: e.lngLat.lng,
       latitude: e.lngLat.lat,
+      longitude: e.lngLat.lng,
     });
+    form.setValue('latitude', e.lngLat.lat);
+    form.setValue('longitude', e.lngLat.lng);
   };
 
   function onError(errors: FieldErrors<StationFormValues>) {
-    console.log("Validation errors:", errors);
-
-    // Helper to get first error message from FieldErrors recursively
     function getFirstErrorMessage(errors: FieldErrors<any>): string | null {
       for (const key in errors) {
         const errorOrNested = errors[key];
         if (!errorOrNested) continue;
-
-        // If this is a FieldError with message
         if (
-          "message" in errorOrNested &&
-          typeof errorOrNested.message === "string"
+          'message' in errorOrNested &&
+          typeof errorOrNested.message === 'string'
         ) {
           return errorOrNested.message;
         }
-
-        // Otherwise, recurse into nested errors
-        if (typeof errorOrNested === "object") {
+        if (typeof errorOrNested === 'object') {
           const nestedMessage = getFirstErrorMessage(
             errorOrNested as FieldErrors<any>
           );
@@ -221,15 +236,14 @@ export default function RegisterStationPage() {
       }
       return null;
     }
-
-    const message = getFirstErrorMessage(errors) || "Please check all fields.";
-
+    const message = getFirstErrorMessage(errors) || 'Please check all fields.';
     toast({
-      variant: "destructive",
-      title: "Form Error",
+      variant: 'destructive',
+      title: 'Form Error',
       description: message,
     });
   }
+
 
   // --- UI ---
   return (

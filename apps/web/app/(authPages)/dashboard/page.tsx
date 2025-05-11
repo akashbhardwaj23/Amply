@@ -39,7 +39,6 @@ const DashBoardPage = async() => {
                         <AvatarImage src={user.picture} alt={user.name} />
                         <AvatarFallback>
                           {user.name?.charAt(0)!}
-                          {user.name?.split(" ")[1].charAt(0)}
                         </AvatarFallback>
                       </Avatar>
                       <div>
