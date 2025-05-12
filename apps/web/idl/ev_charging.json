@@ -85,6 +85,49 @@
       ]
     },
     {
+      "name": "initialize_reward_mint",
+      "discriminator": [136, 219, 113, 48, 109, 59, 18, 208],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "reward_mint",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "mint_authority_pda",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109, 105, 110, 116, 45, 97, 117, 116, 104, 111, 114, 105, 116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "initialize_user",
       "discriminator": [111, 17, 185, 250, 60, 122, 38, 254],
       "accounts": [
@@ -195,12 +238,21 @@
           "writable": true
         },
         {
-          "name": "authority",
-          "writable": true,
-          "signer": true
+          "name": "mint_authority_pda",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109, 105, 110, 116, 45, 97, 117, 116, 104, 111, 114, 105, 116,
+                  121
+                ]
+              }
+            ]
+          }
         },
         {
-          "name": "mint_authority",
+          "name": "authority",
           "writable": true,
           "signer": true
         },
@@ -217,6 +269,10 @@
         {
           "name": "use_token",
           "type": "bool"
+        },
+        {
+          "name": "mint_authority_bump",
+          "type": "u8"
         }
       ]
     },

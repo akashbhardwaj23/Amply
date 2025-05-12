@@ -41,7 +41,6 @@ import { useUser } from '@civic/auth-web3/react';
 import { fetchChargerData } from '@/app/server/charger';
 import { Loader } from '@/components/ui/loader';
 
-
 const DashBoardPage = () => {
   const [cData, setCData] = useState();
   const [selectedCharger, setSelectedCharger] = useState();
@@ -53,6 +52,8 @@ const DashBoardPage = () => {
   useEffect(() => {
     getCharger();
   }, []);
+
+  console.log('cData', cData);
   const { user, isLoading } = useUser();
 
   // if (!user) {
@@ -61,8 +62,10 @@ const DashBoardPage = () => {
 
   if (isLoading) {
     return (
-      <div className='flex justify-center items-center h-72'><Loader /></div>
-    )
+      <div className="flex justify-center items-center h-72">
+        <Loader />
+      </div>
+    );
   }
 
   return (
