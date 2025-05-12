@@ -33,3 +33,25 @@ interface Station {
 interface Window {
   solana?: PhantomProvider;
 }
+
+
+export interface ChargerType {
+  publicKey: string;
+  account:   Account;
+}
+
+export interface Account {
+  owner:          string;
+  name:           string;
+  address:        string;
+  city:           string;
+  state:          string;
+  zip:            string;
+  description:    string;
+  chargerType:    string;
+  power:          string;
+  price:          string;
+  connectorTypes: string;
+  latitude:       number;
+  longitude:      number;
+}

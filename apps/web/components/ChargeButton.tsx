@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Dispatch, SetStateAction } from 'react';
 import {
   web3,
   BN,
@@ -19,6 +19,9 @@ import { Button } from '@/components/ui/button';
 import { PlugZap } from 'lucide-react';
 import idl from '@/idl/ev_charging.json';
 import { Card, CardContent } from './ui/card';
+import { ChargerType } from '@/types';
+import { Label } from './ui/label';
+import { toast } from './ui/use-toast';
 
 interface PhantomProvider {
   isPhantom?: boolean;
@@ -52,8 +55,8 @@ export function ChargeButton({
   charger,
   setSelectedCharger,
 }: {
-  charger: any;
-  setSelectedCharger: any;
+  charger: ChargerType;
+  setSelectedCharger: Dispatch<SetStateAction<ChargerType | undefined>>;
 }) {
   const [isCharging, setIsCharging] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -62,6 +65,8 @@ export function ChargeButton({
   const [escrowKeypair, setEscrowKeypair] = useState<web3.Keypair | null>(null);
 
   const escrowKeypairRef = useRef<web3.Keypair | null>(null);
+
+  console.log("charger ",charger);
 
   // Initialize Phantom and Anchor program on mount
   useEffect(() => {
@@ -239,7 +244,7 @@ export function ChargeButton({
 
       // 9. Amount to charge (example: 1 SOL)
       const amountInLamports = new BN(
-        charger.account.price * web3.LAMPORTS_PER_SOL
+        Number(charger.account.price) * web3.LAMPORTS_PER_SOL
       );
 
       // 10. Call startCharge instruction
@@ -261,7 +266,11 @@ export function ChargeButton({
         .rpc();
 
       // 11. Alert user that funds are transferred to escrow
-      window.alert('Funds transferred to escrow account!');
+       toast({
+              variant: 'default',
+              title: 'Funds transferred',
+              description: 'Funds transferred to escrow account!',
+            });
 
       // 12. Start charging timer or any post-charge logic
       startChargingTimer();
@@ -323,12 +332,12 @@ export function ChargeButton({
 
       // Charger owner public key (adjust as needed)
       const chargerOwnerPubkey = new web3.PublicKey(
-        charger.owner || phantom.publicKey
+        charger.account.owner || phantom.publicKey
       );
 
       // Amount to release (same as charged amount)
       const amountInLamports = new BN(
-        charger.account.price * web3.LAMPORTS_PER_SOL
+        Number(charger.account.price) * web3.LAMPORTS_PER_SOL
       );
 
       await program.methods
@@ -342,24 +351,36 @@ export function ChargeButton({
         })
         .rpc();
       console.log('escrow realsed success');
-      window.alert('escrow realsed success');
+      toast({
+              variant: 'default',
+              title: 'Escrow Released',
+              description: 'Escrow Released Successfully',
+            });
       // toast.success('Escrow released successfully!');
       setIsCharging(false);
       setProgress(100);
     } catch (err) {
       console.error('Failed to release escrow', err);
+      toast({
+              variant: 'destructive',
+              title: 'Transfer Failed',
+              description: 'Failed To release Escrow',
+            });
       // toast.error('Failed to release escrow');
       setIsCharging(false);
     }
   };
 
   return (
-    <Card>
+    <Card className='mb-2'>
       <CardContent className="flex justify-between p-2">
         <div className="text-xs">
-          <h1>{charger.name}</h1>
-          <h2>{charger.price}</h2>
-          <h3>{charger.address}</h3>
+         <div className='mb-1'>
+           <Label>Charger Name :</Label>
+          <h1>{charger.account.name}</h1>
+         </div>
+          <div  className='flex justify-start gap-2'><Label>Price : </Label>
+          <h2>{charger.account.price.length}</h2></div>
         </div>
         <Button
           onClick={handleCharge}

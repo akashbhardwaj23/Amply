@@ -1,16 +1,7 @@
 'use client';
 
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import {
-  web3,
-  AnchorProvider,
-  Program,
-  setProvider,
-  getProvider,
-} from '@coral-xyz/anchor';
-import idl from '@/idl/ev_charging.json';
 
+import { useEffect, useState } from 'react';
 import { ChargeButton } from '@/components/ChargeButton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -25,7 +16,6 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { getUser } from '@civic/auth-web3/nextjs';
 import {
   Battery,
   Calendar,
@@ -34,20 +24,23 @@ import {
   CreditCard,
   History,
   MapPin,
-  PlugZap,
   Zap,
 } from 'lucide-react';
 import { useUser } from '@civic/auth-web3/react';
 import { fetchChargerData } from '@/app/server/charger';
 import { Loader } from '@/components/ui/loader';
+import { ChargerType } from '@/types';
 
 const DashBoardPage = () => {
-  const [cData, setCData] = useState();
-  const [selectedCharger, setSelectedCharger] = useState();
+  const [cData, setCData] = useState<ChargerType[]>();
+  const [selectedCharger, setSelectedCharger] = useState<ChargerType>();
+  const [loading, setLoading] = useState(false)
 
   const getCharger = async () => {
+    setLoading(true)
     const chargerData = await fetchChargerData();
     setCData(chargerData);
+    setLoading(false)
   };
   useEffect(() => {
     getCharger();
@@ -60,7 +53,7 @@ const DashBoardPage = () => {
   //   return <div>User Not Found</div>;
   // }
 
-  if (isLoading) {
+  if (isLoading || loading) {
     return (
       <div className="flex justify-center items-center h-72">
         <Loader />
@@ -85,12 +78,12 @@ const DashBoardPage = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <Avatar className="h-12 w-12">
-                    <AvatarImage src={user.picture} alt={user.name} />
-                    <AvatarFallback>{user.name?.charAt(0)!}</AvatarFallback>
+                    <AvatarImage src={user?.picture} alt={user?.name} />
+                    <AvatarFallback>{user?.name?.charAt(0)!}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <CardTitle>{user.name}</CardTitle>
-                    <CardDescription>{user.email}</CardDescription>
+                    <CardTitle>{user?.name}</CardTitle>
+                    <CardDescription>{user?.email}</CardDescription>
                   </div>
                 </div>
                 <Button variant="outline" size="sm">
@@ -272,9 +265,9 @@ const DashBoardPage = () => {
                   Start Charging
                 </Button>
 
-                {cData.map((charger) => (
+                {cData && cData.map((charger, idx) => (
                   <ChargeButton
-                    key={charger.publicKey.toBase58()}
+                    key={idx}
                     charger={charger}
                     setSelectedCharger={setSelectedCharger}
                   />
@@ -286,7 +279,7 @@ const DashBoardPage = () => {
           <Card>
             <CardHeader>
               <CardTitle>Charging Rewards</CardTitle>
-              <CardDescription>Earn tokens with every charge</CardDescription>
+              <CardDescription>Earn tokens with every charge. Coming Soon</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
