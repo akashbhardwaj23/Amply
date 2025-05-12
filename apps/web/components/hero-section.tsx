@@ -60,6 +60,11 @@ export function HeroSection() {
               <Link href="/register-station">Register Your Charger</Link>
             </Button>
           </div>
+          <div className="mt-4">
+            <Button asChild size="lg" className="bg-primary border border-border text-white hover:bg-primary/90">
+              <Link href="/dashboard">Go To Dashboard</Link>
+            </Button>
+          </div>
         </div>
       </div>
     </motion.div>

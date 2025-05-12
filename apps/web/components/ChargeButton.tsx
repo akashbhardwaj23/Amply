@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { PlugZap } from 'lucide-react';
 import idl from '@/idl/ev_charging.json';
+import { Card, CardContent } from './ui/card';
 
 interface PhantomProvider {
   isPhantom?: boolean;
@@ -207,8 +208,14 @@ export function ChargeButton({
   };
 
   return (
-    <div>
-      <Button
+    <Card>
+     <CardContent className='flex justify-between p-2'>
+      <div className='text-xs'>
+        <h1>{charger.name}</h1>
+        <h2>{charger.price}</h2>
+        <h3>{charger.address}</h3>
+      </div>
+       <Button
         onClick={handleCharge}
         variant="default"
         className="px-8"
@@ -229,6 +236,7 @@ export function ChargeButton({
           </p>
         </div>
       )}
-    </div>
+     </CardContent>
+      </Card>
   );
 }
