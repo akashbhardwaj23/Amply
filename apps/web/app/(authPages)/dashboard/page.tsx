@@ -216,17 +216,17 @@ const DashBoardPage = () => {
             <CardContent className="space-y-4">
               <div className="bg-rose-50 dark:bg-rose-950/20 p-4 rounded-lg border border-rose-200 dark:border-rose-800">
                 <div className="flex justify-between items-start mb-3">
-                  <h3 className="font-bold text-lg">{cData.name}</h3>
+                  <h3 className="font-bold text-lg">{chargerData.name}</h3>
                   <span className="px-2 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
-                    {cData.status}
+                    {chargerData.status}
                   </span>
                 </div>
 
                 <div className="flex items-center text-sm text-muted-foreground mb-4">
                   <MapPin className="mr-1 h-4 w-4" />
-                  <span>{cData.location}</span>
+                  <span>{chargerData.location}</span>
                   <span className="mx-2">•</span>
-                  <span>{cData.distance}</span>
+                  <span>{chargerData.distance}</span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 mb-4">
@@ -234,24 +234,24 @@ const DashBoardPage = () => {
                     <p className="text-xs text-muted-foreground">
                       Power Output
                     </p>
-                    <p className="font-medium">{cData.power}</p>
+                    <p className="font-medium">{chargerData.power}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Price</p>
-                    <p className="font-medium">{cData.price}</p>
+                    <p className="font-medium">{chargerData.price}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">
                       Connector Types
                     </p>
-                    <p className="font-medium">{cData.connectorType}</p>
+                    <p className="font-medium">{chargerData.connectorType}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">
                       Availability
                     </p>
                     <p className="font-medium">
-                      {cData.currentUsers}/{cData.maxUsers} in use
+                      {chargerData.currentUsers}/{chargerData.maxUsers} in use
                     </p>
                   </div>
                 </div>
@@ -259,9 +259,9 @@ const DashBoardPage = () => {
                 <div className="mb-4">
                   <div className="flex justify-between items-center mb-1">
                     <p className="text-sm font-medium">Your Vehicle Battery</p>
-                    <p className="text-sm">{cData.batteryLevel}%</p>
+                    <p className="text-sm">{chargerData.batteryLevel}%</p>
                   </div>
-                  <Progress value={cData.batteryLevel} className="h-2" />
+                  <Progress value={chargerData.batteryLevel} className="h-2" />
                 </div>
 
                 <Button className="w-full mb-2">
@@ -269,15 +269,13 @@ const DashBoardPage = () => {
                   Start Charging
                 </Button>
 
-                
-                  {cData.map((charger) => (
-                    <ChargeButton
-                      key={charger.publicKey.toBase58()}
-                      charger={charger}
-                      setSelectedCharger={setSelectedCharger}
-                    />
-                  ))}
-                
+                {cData.map((charger) => (
+                  <ChargeButton
+                    key={charger.publicKey.toBase58()}
+                    charger={charger}
+                    setSelectedCharger={setSelectedCharger}
+                  />
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -352,16 +350,16 @@ const userData = {
 };
 
 // Mock charger data
-// const chargerData = {
-//   id: 'charger-001',
-//   name: 'SolCharge Downtown #5',
-//   location: '123 Main St, Anytown',
-//   status: 'Available',
-//   power: '150 kW',
-//   price: '0.25 SOL/kWh',
-//   connectorType: 'CCS, CHAdeMO',
-//   currentUsers: 0,
-//   maxUsers: 2,
-//   distance: '0.3 miles away',
-//   batteryLevel: 42,
-// };
+const chargerData = {
+  id: 'charger-001',
+  name: 'SolCharge Downtown #5',
+  location: '123 Main St, Anytown',
+  status: 'Available',
+  power: '150 kW',
+  price: '0.25 SOL/kWh',
+  connectorType: 'CCS, CHAdeMO',
+  currentUsers: 0,
+  maxUsers: 2,
+  distance: '0.3 miles away',
+  batteryLevel: 42,
+};
