@@ -2,11 +2,22 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::{program::invoke, system_instruction};
 use anchor_spl::token::{self, Mint, MintTo, Token, TokenAccount};
 
-declare_id!("3t62RkND3XUGD1K6hcETeQEDYwG3E45juB2qYprxpxXv");
+declare_id!("BzyxNcedD9nnqVD34p2maBDEWfrvn6s618zreFQwrPyJ");
+
+// Constants for finding the mint authority PDA
+pub const MINT_AUTHORITY_SEED: &[u8] = b"mint-authority";
 
 #[program]
 pub mod ev_charging {
     use super::*;
+
+    // Initialize the reward token mint with program's PDA as the mint authority
+    pub fn initialize_reward_mint(_ctx: Context<InitializeRewardMint>) -> Result<()> {
+        // No additional logic needed - the account constraints in the context
+        // will set up the mint with the correct authority
+        msg!("Reward mint initialized with program PDA as mint authority");
+        Ok(())
+    }
 
     pub fn create_charger(
         ctx: Context<CreateCharger>,
@@ -89,7 +100,7 @@ pub mod ev_charging {
         Ok(())
     }
 
-    pub fn start_charge(ctx: Context<StartCharge>, amount: u64, use_token: bool) -> Result<()> {
+    pub fn start_charge(ctx: Context<StartCharge>, amount: u64, use_token: bool, mint_authority_bump: u8) -> Result<()> {
         let mut amount_in_lamports = amount;
         let user_token_acc = &ctx.accounts.user_reward_token_account;
         let owner_token_acc = &ctx.accounts.owner_reward_token_account;
@@ -136,11 +147,19 @@ pub mod ev_charging {
             let user = &ctx.accounts.user;
             user.charge_count >= 3 && !use_token
         } {
-            // Use the mint authority (owner) to sign for minting tokens
-            token::mint_to(
-                ctx.accounts.into_mint_to_user_context(),
-                1, // Mint 1 token as reward
-            )?;
+            // Use the mint authority PDA to sign for minting tokens through CPI
+            let seeds = &[MINT_AUTHORITY_SEED, &[mint_authority_bump]];
+            let signer_seeds = &[&seeds[..]];
+            
+            // Mint the token to the user's reward token account
+            let cpi_accounts = MintTo {
+                mint: ctx.accounts.reward_mint.to_account_info(),
+                to: ctx.accounts.user_reward_token_account.to_account_info(),
+                authority: ctx.accounts.mint_authority_pda.to_account_info(),
+            };
+            let cpi_program = ctx.accounts.token_program.to_account_info();
+            let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds);
+            token::mint_to(cpi_ctx, 1)?;
         }
 
         // Now mutably borrow user and update fields
@@ -204,6 +223,31 @@ pub mod ev_charging {
 // --- Contexts ---
 
 #[derive(Accounts)]
+pub struct InitializeRewardMint<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    
+    #[account(
+        init,
+        payer = payer,
+        mint::decimals = 0,
+        mint::authority = mint_authority_pda,
+    )]
+    pub reward_mint: Account<'info, Mint>,
+    
+    #[account(
+        seeds = [MINT_AUTHORITY_SEED],
+        bump,
+    )]
+    /// CHECK: This is a PDA owned by the program that will be the mint authority
+    pub mint_authority_pda: UncheckedAccount<'info>,
+    
+    pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
+}
+
+#[derive(Accounts)]
 #[instruction(name: String)]
 pub struct CreateCharger<'info> {
     #[account(init, payer = payer, space = 8 + Charger::MAX_SIZE, seeds = [name.as_bytes()], bump)]
@@ -221,6 +265,7 @@ pub struct UpdateCharger<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(amount: u64, use_token: bool, mint_authority_bump: u8)]
 pub struct StartCharge<'info> {
     #[account(mut)]
     pub user: Account<'info, User>,
@@ -229,7 +274,7 @@ pub struct StartCharge<'info> {
     #[account(mut)]
     pub charger: Account<'info, Charger>,
 
-    // Still need token accounts for reward tokens
+    // Token accounts for reward tokens
     #[account(mut)]
     pub user_reward_token_account: Account<'info, TokenAccount>,
     #[account(mut)]
@@ -240,23 +285,18 @@ pub struct StartCharge<'info> {
     // Mint account for reward token
     #[account(mut)]
     pub reward_mint: Account<'info, Mint>,
-
+    
+    // PDA that has mint authority
+    #[account(
+        seeds = [MINT_AUTHORITY_SEED],
+        bump = mint_authority_bump
+    )]
+    /// CHECK: This is a PDA owned by the program that is the mint authority
+    pub mint_authority_pda: UncheckedAccount<'info>,
+    
     #[account(mut)]
     pub authority: Signer<'info>,
-    #[account(mut)]
-    pub mint_authority: Signer<'info>,
     pub system_program: Program<'info, System>,
-}
-
-impl<'info> StartCharge<'info> {
-    fn into_mint_to_user_context(&self) -> CpiContext<'_, '_, '_, 'info, MintTo<'info>> {
-        let cpi_accounts = MintTo {
-            mint: self.reward_mint.to_account_info(),
-            to: self.user_reward_token_account.to_account_info(),
-            authority: self.mint_authority.to_account_info(),
-        };
-        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
-    }
 }
 
 #[derive(Accounts)]
