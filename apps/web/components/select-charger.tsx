@@ -21,10 +21,13 @@ export default function SelectChargeButton({
          <CardContent className="flex justify-between p-2">
            <div className="text-xs">
             <div className='mb-1'>
-              <Label>Charger Name :</Label>
+              <label htmlFor="name">Charge Name :</label>
+              {/* <Label>Charger Name :</Label> */}
              <h1>{charger.account.name}</h1>
             </div>
-             <div  className='flex justify-start gap-2'><Label>Price : </Label>
+             <div  className='flex justify-start gap-2'>
+              <label htmlFor="price">Price : </label>
+              {/* <Label>Price : </Label> */}
              <h2>{charger.account.price.length}</h2></div>
            </div>
            <Button

@@ -29,6 +29,15 @@ import { fetchChargerData } from "@/app/server/charger";
 import { Loader } from "@/components/ui/loader";
 import { ChargerType } from "@/types";
 import SelectChargeButton from "@/components/select-charger";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 const DashBoardPage = () => {
   const [cData, setCData] = useState<ChargerType[]>();
@@ -87,9 +96,34 @@ const DashBoardPage = () => {
                     <CardDescription>{user?.email}</CardDescription>
                   </div>
                 </div>
-                <Button variant="outline" size="sm">
-                  Edit Profile
-                </Button>
+
+                <Dialog>
+                  <DialogTrigger className="border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3">
+                    Edit Profile
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle className="text-3xl">Profile</DialogTitle>
+                    </DialogHeader>
+
+                    <div className="flex items-center space-x-2">
+                      <div className="grid flex-1 gap-2">
+                        <label htmlFor="name">Name : </label>
+                        <Input
+                          id="name"
+                          defaultValue={user?.name}
+                          readOnly
+                        />
+                        <label htmlFor="email">Email : </label>
+                        <Input
+                          id="email"
+                          defaultValue={user?.email}
+                          readOnly
+                        />
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardHeader>
             <CardContent>
@@ -263,7 +297,11 @@ const DashBoardPage = () => {
                   <Progress value={chargerData.batteryLevel} className="h-2" />
                 </div> */}
 
-                  <ChargeButton charger={selectedCharger} isCharging={isCharging} setIsCharging={setIsCharging} />
+                  <ChargeButton
+                    charger={selectedCharger}
+                    isCharging={isCharging}
+                    setIsCharging={setIsCharging}
+                  />
                 </div>
               ) : (
                 <div className="bg-rose-50 text-primary dark:bg-rose-950/20 p-4 rounded-lg border border-rose-200 dark:border-rose-800">

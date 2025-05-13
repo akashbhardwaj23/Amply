@@ -7,20 +7,17 @@ import {
   Program,
   AnchorProvider,
   setProvider,
-  getProvider,
 } from "@coral-xyz/anchor";
 import {
   getAssociatedTokenAddress,
   createAssociatedTokenAccountInstruction,
 } from "@solana/spl-token";
-import { PublicKey, Connection, clusterApiUrl, Keypair } from "@solana/web3.js";
+import { PublicKey, Connection, clusterApiUrl } from "@solana/web3.js";
 // import { toast } from '@/components/ui/use-toast';
 import { Button } from "@/components/ui/button";
-import { PlugZap, Zap } from "lucide-react";
+import { Zap } from "lucide-react";
 import idl from "@/idl/ev_charging.json";
-import { Card, CardContent } from "./ui/card";
 import { ChargerType } from "@/types";
-import { Label } from "./ui/label";
 import { toast } from "./ui/use-toast";
 
 interface PhantomProvider {
@@ -141,7 +138,7 @@ export function ChargeButton({ charger, isCharging, setIsCharging }: { charger: 
       console.log("escrowKeypair", escrowKeypairRef.current);
 
       // 4. Charger public key
-      const chargerPubkey = charger.publicKey || charger.account.publicKey;
+      const chargerPubkey = charger.publicKey;
 
       // 5. Owner public key (from charger account)
       const ownerPubkey = new web3.PublicKey(charger.account.owner);
@@ -173,6 +170,7 @@ export function ChargeButton({ charger, isCharging, setIsCharging }: { charger: 
         tx.recentBlockhash = latestBlockhash.blockhash;
         tx.feePayer = phantom.publicKey;
 
+        //@ts-ignore
         // Sign transaction
         const signedTx = await phantom.signTransaction(tx);
 
@@ -214,6 +212,7 @@ export function ChargeButton({ charger, isCharging, setIsCharging }: { charger: 
         tx.recentBlockhash = latestBlockhash.blockhash;
         tx.feePayer = phantom.publicKey;
 
+        //@ts-ignore
         // Sign transaction
         const signedTx = await phantom.signTransaction(tx);
 
@@ -298,6 +297,7 @@ export function ChargeButton({ charger, isCharging, setIsCharging }: { charger: 
     }
     if (!phantom) {
       console.error("no phantom");
+      return;
     }
     if (!phantom.publicKey) {
       console.error("no phantom.publicKey");
