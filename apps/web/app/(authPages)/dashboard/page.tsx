@@ -12,7 +12,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -207,7 +206,9 @@ const DashBoardPage = () => {
               {selectedCharger ? (
                 <div className="bg-rose-50 dark:bg-rose-950/20 p-4 rounded-lg border border-rose-200 dark:border-rose-800">
                   <div className="flex justify-between items-start mb-3">
-                    <h3 className="font-bold text-lg">{selectedCharger.account.name}</h3>
+                    <h3 className="font-bold text-lg">
+                      {selectedCharger.account.name}
+                    </h3>
                     <span className="px-2 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
                       {chargerData.status}
                     </span>
@@ -225,17 +226,23 @@ const DashBoardPage = () => {
                       <p className="text-xs text-muted-foreground">
                         Power Output
                       </p>
-                      <p className="font-medium">{selectedCharger.account.power.length}</p>
+                      <p className="font-medium">
+                        {selectedCharger.account.power.length}
+                      </p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Price</p>
-                      <p className="font-medium">{selectedCharger.account.price.length}</p>
+                      <p className="font-medium">
+                        {selectedCharger.account.price.length}
+                      </p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">
                         Connector Types
                       </p>
-                      <p className="font-medium">{selectedCharger.account.chargerType}</p>
+                      <p className="font-medium">
+                        {selectedCharger.account.chargerType}
+                      </p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">
@@ -255,9 +262,7 @@ const DashBoardPage = () => {
                   <Progress value={chargerData.batteryLevel} className="h-2" />
                 </div> */}
 
-                  <ChargeButton 
-                    charger={selectedCharger}
-                  />
+                  <ChargeButton charger={selectedCharger} />
                 </div>
               ) : (
                 <div className="bg-rose-50 text-primary dark:bg-rose-950/20 p-4 rounded-lg border border-rose-200 dark:border-rose-800">
@@ -266,16 +271,18 @@ const DashBoardPage = () => {
               )}
             </CardContent>
 
-            <CardContent>
-              {cData &&
-                cData.map((charger, idx) => (
-                  <SelectChargeButton
-                    key={idx}
-                    charger={charger}
-                    setSelectedCharger={setSelectedCharger}
-                  />
-                ))}
-            </CardContent>
+            <div className="space-y-6">
+              <CardContent>
+                {cData &&
+                  cData.map((charger, idx) => (
+                    <SelectChargeButton
+                      key={idx}
+                      charger={charger}
+                      setSelectedCharger={setSelectedCharger}
+                    />
+                  ))}
+              </CardContent>
+            </div>
           </Card>
 
           <Card>

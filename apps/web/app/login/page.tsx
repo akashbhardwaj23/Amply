@@ -23,7 +23,7 @@ export default async function SignIn() {
       <main className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
-            <h1 className="text-3xl font-bold tracking-tight">Welcome to ChargeSol</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Welcome to Amply</h1>
             <p className="mt-2 text-muted-foreground">Sign in to access your EV charging dashboard</p>
           </div>
 

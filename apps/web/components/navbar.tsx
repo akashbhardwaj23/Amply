@@ -29,19 +29,25 @@ import {motion} from "motion/react"
 import { useUser } from "@civic/auth-web3/react";
 import { AvatarImage } from "@radix-ui/react-avatar"
 import { Loader } from "./ui/loader"
+import { useLoading } from "@/hooks/useLoading"
 
 export default function Navbar() {
   const pathname = usePathname()
   const [voiceCommandOpen, setVoiceCommandOpen] = useState(false)
   const router = useRouter()
+  const {loading, setLoading} = useLoading()
   const {user, isLoading, signIn, signOut} = useUser()
 
   const handleSignIn = async() => {
+    setLoading(true);
     await signIn();
+    setLoading(true);
   }
 
   const handleSignOut = async () => {
-    await signOut()
+    setLoading(true);
+    await signOut();
+    setLoading(false);
   }
 
   return (

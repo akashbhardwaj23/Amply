@@ -359,7 +359,6 @@ export function ChargeButton({ charger }: { charger: ChargerType }) {
         title: "Transfer Failed",
         description: "Failed To release Escrow",
       });
-      // toast.error('Failed to release escrow');
       setIsCharging(false);
     }
   };
