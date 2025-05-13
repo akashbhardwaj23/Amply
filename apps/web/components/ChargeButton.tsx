@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useEffect, useState, useRef, Dispatch, SetStateAction } from 'react';
+import { useEffect, useState, useRef, Dispatch, SetStateAction } from "react";
 import {
   web3,
   BN,
@@ -8,20 +8,20 @@ import {
   AnchorProvider,
   setProvider,
   getProvider,
-} from '@coral-xyz/anchor';
+} from "@coral-xyz/anchor";
 import {
   getAssociatedTokenAddress,
   createAssociatedTokenAccountInstruction,
-} from '@solana/spl-token';
-import { PublicKey, Connection, clusterApiUrl, Keypair } from '@solana/web3.js';
+} from "@solana/spl-token";
+import { PublicKey, Connection, clusterApiUrl, Keypair } from "@solana/web3.js";
 // import { toast } from '@/components/ui/use-toast';
-import { Button } from '@/components/ui/button';
-import { PlugZap } from 'lucide-react';
-import idl from '@/idl/ev_charging.json';
-import { Card, CardContent } from './ui/card';
-import { ChargerType } from '@/types';
-import { Label } from './ui/label';
-import { toast } from './ui/use-toast';
+import { Button } from "@/components/ui/button";
+import { PlugZap, Zap } from "lucide-react";
+import idl from "@/idl/ev_charging.json";
+import { Card, CardContent } from "./ui/card";
+import { ChargerType } from "@/types";
+import { Label } from "./ui/label";
+import { toast } from "./ui/use-toast";
 
 interface PhantomProvider {
   isPhantom?: boolean;
@@ -33,31 +33,25 @@ interface PhantomProvider {
 }
 
 const PROGRAM_ID = new web3.PublicKey(idl.address);
-const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
 const SYSTEM_PROGRAM_ID = web3.SystemProgram.programId;
 const TOKEN_PROGRAM_ID = new web3.PublicKey(
-  'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'
+  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
 );
 const REWARD_MINT = new web3.PublicKey(
-  'DoEB6x9GozTZTbvN63pk8F5yrQChosm7aRA37eKPjwCH'
+  "DoEB6x9GozTZTbvN63pk8F5yrQChosm7aRA37eKPjwCH"
 );
 
 const getPhantomProvider = (): PhantomProvider | undefined => {
-  if (typeof window !== 'undefined' && 'solana' in window) {
+  if (typeof window !== "undefined" && "solana" in window) {
     const provider = (window as any).solana as PhantomProvider;
     if (provider.isPhantom) return provider;
   }
-  window.open('https://phantom.app/', '_blank');
+  window.open("https://phantom.app/", "_blank");
   return undefined;
 };
 
-export function ChargeButton({
-  charger,
-  setSelectedCharger,
-}: {
-  charger: ChargerType;
-  setSelectedCharger: Dispatch<SetStateAction<ChargerType | undefined>>;
-}) {
+export function ChargeButton({ charger }: { charger: ChargerType }) {
   const [isCharging, setIsCharging] = useState(false);
   const [progress, setProgress] = useState(0);
   const [phantom, setPhantom] = useState<PhantomProvider | undefined>();
@@ -66,7 +60,7 @@ export function ChargeButton({
 
   const escrowKeypairRef = useRef<web3.Keypair | null>(null);
 
-  console.log("charger ",charger);
+  console.log("charger ", charger);
 
   // Initialize Phantom and Anchor program on mount
   useEffect(() => {
@@ -82,8 +76,8 @@ export function ChargeButton({
         await phantomProvider.connect();
 
         const connection = new web3.Connection(
-          'https://api.devnet.solana.com',
-          'confirmed'
+          "https://api.devnet.solana.com",
+          "confirmed"
         );
         const anchorProvider = new AnchorProvider(
           connection,
@@ -95,7 +89,7 @@ export function ChargeButton({
         const programInstance = new Program(idl, anchorProvider);
         setProgram(programInstance);
       } catch (err) {
-        console.error('Wallet connection failed', err);
+        console.error("Wallet connection failed", err);
         // toast.error('Failed to connect Phantom wallet');
       }
     };
@@ -105,17 +99,16 @@ export function ChargeButton({
   // Main charge handler
   const handleCharge = async () => {
     if (!program || !phantom || !phantom.publicKey) {
-      console.error('Wallet not connected');
+      console.error("Wallet not connected");
       return;
     }
 
-    setSelectedCharger(charger);
     setIsCharging(true);
 
     try {
       // 1. Derive user PDA
       const [userPDA] = await web3.PublicKey.findProgramAddress(
-        [Buffer.from('user'), phantom.publicKey.toBuffer()],
+        [Buffer.from("user"), phantom.publicKey.toBuffer()],
         program.programId
       );
 
@@ -127,7 +120,7 @@ export function ChargeButton({
         userAccount = null;
       }
       if (!userAccount) {
-        console.log('User PDA not found, creating...');
+        console.log("User PDA not found, creating...");
         await program.methods
           .initializeUser()
           .accounts({
@@ -136,7 +129,7 @@ export function ChargeButton({
             systemProgram: SYSTEM_PROGRAM_ID,
           })
           .rpc();
-        console.log('User PDA created');
+        console.log("User PDA created");
       }
 
       // 3. Generate escrow keypair for this charge session
@@ -144,8 +137,8 @@ export function ChargeButton({
       setEscrowKeypair(escrow);
       escrowKeypairRef.current = escrow;
 
-      console.log('escow', escrow);
-      console.log('escrowKeypair', escrowKeypairRef.current);
+      console.log("escow", escrow);
+      console.log("escrowKeypair", escrowKeypairRef.current);
 
       // 4. Charger public key
       const chargerPubkey = charger.publicKey || charger.account.publicKey;
@@ -164,7 +157,7 @@ export function ChargeButton({
         userRewardTokenAccount
       );
       if (!userRewardAccountInfo) {
-        console.log('User reward token account missing, creating...');
+        console.log("User reward token account missing, creating...");
         const tx = new web3.Transaction().add(
           createAssociatedTokenAccountInstruction(
             phantom.publicKey, // payer
@@ -176,7 +169,7 @@ export function ChargeButton({
 
         // Fetch recent blockhash and set fee payer
         const latestBlockhash =
-          await connection.getLatestBlockhash('confirmed');
+          await connection.getLatestBlockhash("confirmed");
         tx.recentBlockhash = latestBlockhash.blockhash;
         tx.feePayer = phantom.publicKey;
 
@@ -189,9 +182,9 @@ export function ChargeButton({
         );
 
         // Confirm transaction
-        await connection.confirmTransaction(signature, 'confirmed');
+        await connection.confirmTransaction(signature, "confirmed");
 
-        console.log('User reward token account created');
+        console.log("User reward token account created");
       }
 
       // 7. Derive owner reward token account (ATA)
@@ -205,7 +198,7 @@ export function ChargeButton({
         ownerRewardTokenAccount
       );
       if (!ownerRewardAccountInfo) {
-        console.log('Owner reward token account missing, creating...');
+        console.log("Owner reward token account missing, creating...");
         const tx = new web3.Transaction().add(
           createAssociatedTokenAccountInstruction(
             phantom.publicKey, // payer (your wallet pays fees)
@@ -217,7 +210,7 @@ export function ChargeButton({
 
         // Fetch recent blockhash and set fee payer
         const latestBlockhash =
-          await connection.getLatestBlockhash('confirmed');
+          await connection.getLatestBlockhash("confirmed");
         tx.recentBlockhash = latestBlockhash.blockhash;
         tx.feePayer = phantom.publicKey;
 
@@ -230,15 +223,15 @@ export function ChargeButton({
         );
 
         // Confirm transaction
-        await connection.confirmTransaction(signature, 'confirmed');
+        await connection.confirmTransaction(signature, "confirmed");
 
-        console.log('Owner reward token account created');
+        console.log("Owner reward token account created");
       }
 
       // 8. Derive mint authority PDA and bump
       const [mintAuthorityPda, mintAuthorityBump] =
         await web3.PublicKey.findProgramAddress(
-          [Buffer.from('mint-authority')],
+          [Buffer.from("mint-authority")],
           program.programId
         );
 
@@ -266,16 +259,16 @@ export function ChargeButton({
         .rpc();
 
       // 11. Alert user that funds are transferred to escrow
-       toast({
-              variant: 'default',
-              title: 'Funds transferred',
-              description: 'Funds transferred to escrow account!',
-            });
+      toast({
+        variant: "default",
+        title: "Funds transferred",
+        description: "Funds transferred to escrow account!",
+      });
 
       // 12. Start charging timer or any post-charge logic
       startChargingTimer();
     } catch (err) {
-      console.error('Charge failed', err);
+      console.error("Charge failed", err);
       setIsCharging(false);
     }
   };
@@ -301,16 +294,16 @@ export function ChargeButton({
   // Release escrow when charging is 90% complete
   const handleReleaseEscrow = async () => {
     if (!program) {
-      console.error('no program');
+      console.error("no program");
     }
     if (!phantom) {
-      console.error('no phantom');
+      console.error("no phantom");
     }
     if (!phantom.publicKey) {
-      console.error('no phantom.publicKey');
+      console.error("no phantom.publicKey");
     }
     if (!escrowKeypairRef.current) {
-      console.error('no escrowKeypair');
+      console.error("no escrowKeypair");
     }
     if (
       !program ||
@@ -319,14 +312,14 @@ export function ChargeButton({
       !escrowKeypairRef.current
     ) {
       // toast.error('Missing required data to release escrow');
-      console.error('error');
+      console.error("error");
       setIsCharging(false);
       return;
     }
     try {
       // Derive user PDA again
       const [userPDA] = await web3.PublicKey.findProgramAddress(
-        [Buffer.from('user'), phantom.publicKey.toBuffer()],
+        [Buffer.from("user"), phantom.publicKey.toBuffer()],
         program.programId
       );
 
@@ -350,60 +343,50 @@ export function ChargeButton({
           systemProgram: web3.SystemProgram.programId,
         })
         .rpc();
-      console.log('escrow realsed success');
+      console.log("escrow realsed success");
       toast({
-              variant: 'default',
-              title: 'Escrow Released',
-              description: 'Escrow Released Successfully',
-            });
+        variant: "default",
+        title: "Escrow Released",
+        description: "Escrow Released Successfully",
+      });
       // toast.success('Escrow released successfully!');
       setIsCharging(false);
       setProgress(100);
     } catch (err) {
-      console.error('Failed to release escrow', err);
+      console.error("Failed to release escrow", err);
       toast({
-              variant: 'destructive',
-              title: 'Transfer Failed',
-              description: 'Failed To release Escrow',
-            });
+        variant: "destructive",
+        title: "Transfer Failed",
+        description: "Failed To release Escrow",
+      });
       // toast.error('Failed to release escrow');
       setIsCharging(false);
     }
   };
 
   return (
-    <Card className='mb-2'>
-      <CardContent className="flex justify-between p-2">
-        <div className="text-xs">
-         <div className='mb-1'>
-           <Label>Charger Name :</Label>
-          <h1>{charger.account.name}</h1>
-         </div>
-          <div  className='flex justify-start gap-2'><Label>Price : </Label>
-          <h2>{charger.account.price.length}</h2></div>
-        </div>
-        <Button
-          onClick={handleCharge}
-          variant="default"
-          className="px-8"
-          disabled={isCharging}
-        >
-          <PlugZap className="mr-2 h-4 w-4" />
-          <span>{isCharging ? 'Charging...' : 'Charge'}</span>
-        </Button>
+    <>
+      <Button
+        onClick={handleCharge}
+        variant="default"
+        className="px-8 w-full"
+        disabled={isCharging}
+      >
+        <Zap className="mr-2 h-4 w-full" />
+        <span>{isCharging ? "Charging..." : "Start Charging"}</span>
+      </Button>
 
-        {isCharging && (
-          <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-            <div
-              className="bg-green-600 h-2.5 rounded-full"
-              style={{ width: `${progress}%` }}
-            />
-            <p className="text-sm text-gray-500 mt-1">
-              {progress.toFixed(0)}% complete
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {isCharging && (
+        <div className="w-full bg-secondary rounded-full h-2.5 my-4">
+          <div
+            className="bg-green-600 h-2.5 rounded-full"
+            style={{ width: `${progress}%` }}
+          />
+          <p className="text-sm text-gray-500 mt-1">
+            {progress.toFixed(0)}% complete
+          </p>
+        </div>
+      )}
+    </>
   );
 }

@@ -1,21 +1,20 @@
-'use client';
+"use client";
 
-
-import { useEffect, useState } from 'react';
-import { ChargeButton } from '@/components/ChargeButton';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { useEffect, useState } from "react";
+import { ChargeButton } from "@/components/ChargeButton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import {
   Battery,
   Calendar,
@@ -25,28 +24,30 @@ import {
   History,
   MapPin,
   Zap,
-} from 'lucide-react';
-import { useUser } from '@civic/auth-web3/react';
-import { fetchChargerData } from '@/app/server/charger';
-import { Loader } from '@/components/ui/loader';
-import { ChargerType } from '@/types';
+} from "lucide-react";
+import { useUser } from "@civic/auth-web3/react";
+import { fetchChargerData } from "@/app/server/charger";
+import { Loader } from "@/components/ui/loader";
+import { ChargerType } from "@/types";
+import SelectChargeButton from "@/components/select-charger";
 
 const DashBoardPage = () => {
   const [cData, setCData] = useState<ChargerType[]>();
   const [selectedCharger, setSelectedCharger] = useState<ChargerType>();
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
+  const [viewAll, setViewAll] = useState(false);
 
   const getCharger = async () => {
-    setLoading(true)
+    setLoading(true);
     const chargerData = await fetchChargerData();
     setCData(chargerData);
-    setLoading(false)
+    setLoading(false);
   };
   useEffect(() => {
     getCharger();
   }, []);
 
-  console.log('cData', cData);
+  console.log("cData", cData);
   const { user, isLoading } = useUser();
 
   // if (!user) {
@@ -161,13 +162,6 @@ const DashBoardPage = () => {
                   ))}
                 </div>
               </div>
-
-              {/* <div className="mt-4 flex justify-end">
-                <ChargeButton
-                  charger={cData}
-                  seletedCharger={selectedCharger}
-                />
-              </div> */}
             </CardContent>
           </Card>
 
@@ -210,76 +204,86 @@ const DashBoardPage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="bg-rose-50 dark:bg-rose-950/20 p-4 rounded-lg border border-rose-200 dark:border-rose-800">
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="font-bold text-lg">{chargerData.name}</h3>
-                  <span className="px-2 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
-                    {chargerData.status}
-                  </span>
-                </div>
+              {selectedCharger ? (
+                <div className="bg-rose-50 dark:bg-rose-950/20 p-4 rounded-lg border border-rose-200 dark:border-rose-800">
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="font-bold text-lg">{selectedCharger.account.name}</h3>
+                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+                      {chargerData.status}
+                    </span>
+                  </div>
 
-                <div className="flex items-center text-sm text-muted-foreground mb-4">
-                  <MapPin className="mr-1 h-4 w-4" />
-                  <span>{chargerData.location}</span>
-                  <span className="mx-2">•</span>
-                  <span>{chargerData.distance}</span>
-                </div>
+                  <div className="flex items-center text-sm text-muted-foreground mb-4">
+                    <MapPin className="mr-1 h-4 w-4" />
+                    <span>{selectedCharger.account.address}</span>
+                    <span className="mx-2">•</span>
+                    <span>{chargerData.distance}</span>
+                  </div>
 
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground">
-                      Power Output
-                    </p>
-                    <p className="font-medium">{chargerData.power}</p>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        Power Output
+                      </p>
+                      <p className="font-medium">{selectedCharger.account.power.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Price</p>
+                      <p className="font-medium">{selectedCharger.account.price.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        Connector Types
+                      </p>
+                      <p className="font-medium">{selectedCharger.account.chargerType}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        Availability
+                      </p>
+                      <p className="font-medium">
+                        {chargerData.currentUsers}/{chargerData.maxUsers} in use
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Price</p>
-                    <p className="font-medium">{chargerData.price}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">
-                      Connector Types
-                    </p>
-                    <p className="font-medium">{chargerData.connectorType}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">
-                      Availability
-                    </p>
-                    <p className="font-medium">
-                      {chargerData.currentUsers}/{chargerData.maxUsers} in use
-                    </p>
-                  </div>
-                </div>
 
-                <div className="mb-4">
+                  {/* <div className="mb-4">
                   <div className="flex justify-between items-center mb-1">
                     <p className="text-sm font-medium">Your Vehicle Battery</p>
                     <p className="text-sm">{chargerData.batteryLevel}%</p>
                   </div>
                   <Progress value={chargerData.batteryLevel} className="h-2" />
+                </div> */}
+
+                  <ChargeButton 
+                    charger={selectedCharger}
+                  />
                 </div>
+              ) : (
+                <div className="bg-rose-50 text-primary dark:bg-rose-950/20 p-4 rounded-lg border border-rose-200 dark:border-rose-800">
+                  No Selected Charger
+                </div>
+              )}
+            </CardContent>
 
-                <Button className="w-full mb-2">
-                  <Zap className="mr-2 h-4 w-4" />
-                  Start Charging
-                </Button>
-
-                {cData && cData.map((charger, idx) => (
-                  <ChargeButton
+            <CardContent>
+              {cData &&
+                cData.map((charger, idx) => (
+                  <SelectChargeButton
                     key={idx}
                     charger={charger}
                     setSelectedCharger={setSelectedCharger}
                   />
                 ))}
-              </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
               <CardTitle>Charging Rewards</CardTitle>
-              <CardDescription>Earn tokens with every charge. Coming Soon</CardDescription>
+              <CardDescription>
+                Earn tokens with every charge. Coming Soon
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -313,49 +317,49 @@ export default DashBoardPage;
 
 // Mock user data
 const userData = {
-  name: 'Alex Johnson',
-  email: 'alex.johnson@example.com',
-  avatar: '/placeholder.svg?height=40&width=40',
+  name: "Alex Johnson",
+  email: "alex.johnson@example.com",
+  avatar: "/placeholder.svg?height=40&width=40",
   tokenBalance: 125.75,
   previousChargingSessions: [
     {
-      id: 'cs-001',
-      date: 'May 8, 2025',
-      location: 'SolCharge Downtown',
-      duration: '45 min',
-      energy: '32.5 kWh',
-      cost: '8.13 SOL',
+      id: "cs-001",
+      date: "May 8, 2025",
+      location: "SolCharge Downtown",
+      duration: "45 min",
+      energy: "32.5 kWh",
+      cost: "8.13 SOL",
     },
     {
-      id: 'cs-002',
-      date: 'May 3, 2025',
-      location: 'EcoCharge Plaza',
-      duration: '30 min',
-      energy: '22.1 kWh',
-      cost: '6.63 SOL',
+      id: "cs-002",
+      date: "May 3, 2025",
+      location: "EcoCharge Plaza",
+      duration: "30 min",
+      energy: "22.1 kWh",
+      cost: "6.63 SOL",
     },
     {
-      id: 'cs-003',
-      date: 'Apr 28, 2025',
-      location: 'GreenWatt Station',
-      duration: '60 min',
-      energy: '45.8 kWh',
-      cost: '10.08 SOL',
+      id: "cs-003",
+      date: "Apr 28, 2025",
+      location: "GreenWatt Station",
+      duration: "60 min",
+      energy: "45.8 kWh",
+      cost: "10.08 SOL",
     },
   ],
 };
 
 // Mock charger data
 const chargerData = {
-  id: 'charger-001',
-  name: 'SolCharge Downtown #5',
-  location: '123 Main St, Anytown',
-  status: 'Available',
-  power: '150 kW',
-  price: '0.25 SOL/kWh',
-  connectorType: 'CCS, CHAdeMO',
+  id: "charger-001",
+  name: "SolCharge Downtown #5",
+  location: "123 Main St, Anytown",
+  status: "Available",
+  power: "150 kW",
+  price: "0.25 SOL/kWh",
+  connectorType: "CCS, CHAdeMO",
   currentUsers: 0,
   maxUsers: 2,
-  distance: '0.3 miles away',
+  distance: "0.3 miles away",
   batteryLevel: 42,
 };
