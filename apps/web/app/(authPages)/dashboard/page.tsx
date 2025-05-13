@@ -34,6 +34,7 @@ const DashBoardPage = () => {
   const [cData, setCData] = useState<ChargerType[]>();
   const [selectedCharger, setSelectedCharger] = useState<ChargerType>();
   const [loading, setLoading] = useState(false);
+  const [isCharging, setIsCharging] = useState(false);
   const [viewAll, setViewAll] = useState(false);
 
   const getCharger = async () => {
@@ -262,7 +263,7 @@ const DashBoardPage = () => {
                   <Progress value={chargerData.batteryLevel} className="h-2" />
                 </div> */}
 
-                  <ChargeButton charger={selectedCharger} />
+                  <ChargeButton charger={selectedCharger} isCharging={isCharging} setIsCharging={setIsCharging} />
                 </div>
               ) : (
                 <div className="bg-rose-50 text-primary dark:bg-rose-950/20 p-4 rounded-lg border border-rose-200 dark:border-rose-800">
@@ -278,6 +279,7 @@ const DashBoardPage = () => {
                     <SelectChargeButton
                       key={idx}
                       charger={charger}
+                      isCharging={isCharging}
                       setSelectedCharger={setSelectedCharger}
                     />
                   ))}

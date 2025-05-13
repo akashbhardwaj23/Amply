@@ -41,7 +41,7 @@ export default function Navbar() {
   const handleSignIn = async() => {
     setLoading(true);
     await signIn();
-    setLoading(true);
+    setLoading(false);
   }
 
   const handleSignOut = async () => {

@@ -9,9 +9,11 @@ import { PlugZap } from "lucide-react";
 
 export default function SelectChargeButton({
     charger,
+    isCharging,
     setSelectedCharger
 }: {
     charger : ChargerType
+    isCharging : boolean
     setSelectedCharger : Dispatch<SetStateAction<ChargerType | undefined>>
 }){
     return (
@@ -29,6 +31,7 @@ export default function SelectChargeButton({
              onClick={() => setSelectedCharger(charger)}
              variant="default"
              className="px-8"
+             disabled={isCharging}
            >
             <PlugZap className="mr-2 h-4 w-4" />
             Select

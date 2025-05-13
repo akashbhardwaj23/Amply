@@ -51,8 +51,8 @@ const getPhantomProvider = (): PhantomProvider | undefined => {
   return undefined;
 };
 
-export function ChargeButton({ charger }: { charger: ChargerType }) {
-  const [isCharging, setIsCharging] = useState(false);
+export function ChargeButton({ charger, isCharging, setIsCharging }: { charger: ChargerType, isCharging : boolean, setIsCharging : Dispatch<SetStateAction<boolean>> }) {
+  
   const [progress, setProgress] = useState(0);
   const [phantom, setPhantom] = useState<PhantomProvider | undefined>();
   const [program, setProgram] = useState<Program | null>(null);
