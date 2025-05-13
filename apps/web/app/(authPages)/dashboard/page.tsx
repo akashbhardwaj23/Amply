@@ -314,14 +314,23 @@ const DashBoardPage = () => {
               <CardContent>
                 {cData &&
                   cData.map((charger, idx) => (
-                    <SelectChargeButton
+                      viewAll ? (<SelectChargeButton
                       key={idx}
                       charger={charger}
                       isCharging={isCharging}
                       setSelectedCharger={setSelectedCharger}
-                    />
+                    />): (idx < 4 && (<SelectChargeButton
+                      key={idx}
+                      charger={charger}
+                      isCharging={isCharging}
+                      setSelectedCharger={setSelectedCharger}
+                    />))
                   ))}
+                  <div className="flex justify-end items-center p-4">
+               <Button variant={"ghost"} onClick={() => setViewAll(prev => !prev)}>{viewAll ? "View Less" : "View All"}</Button>
+              </div>
               </CardContent>
+
             </div>
           </Card>
 
