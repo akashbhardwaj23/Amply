@@ -33,12 +33,12 @@ export default async function SignIn() {
               <CardDescription>Choose your preferred authentication method</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
-              <Button
+              {/* <Button
                 variant="outline"
                 className="w-full h-12 flex items-center justify-center gap-3 border-2"
-              >
-                <SignInButton style={{ border: '0px' }} />
-              </Button>
+              > */}
+                <SignInButton style={{ borderRadius : "5px", border: "1px solid #27272a", backgroundColor : "#0c0a09", width:"100%" }} />
+              {/* </Button> */}
 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
