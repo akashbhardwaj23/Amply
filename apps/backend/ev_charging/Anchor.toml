@@ -5,21 +5,15 @@ package_manager = "yarn"
 resolution = true
 skip-lint = false
 
-[programs.localnet]
-ev_charging = "FxdNFv8Avc2pXzFqiaJDwnda61u8tFfDvE4esAhG3RDg"
-
-[workspace]
-types = "apps/backend/ev_charging/target/types"
-
+[programs.devnet]
+ev_charging = "YehhGH97KftZVcMQX1TB17guVGVUwTYK4PZmoHTfSpv"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
-# cluster = "https://api.devnet.solana.com"
+cluster = "https://api.devnet.solana.com"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-# test = "pnpm run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
- test = "mocha --require ts-node/register --timeout 1000000 --recursive tests/**/*.ts"
+test = "mocha --require ts-node/register --timeout 1000000 --recursive tests/**/*.ts"

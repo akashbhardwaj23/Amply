@@ -1,24 +1,27 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useRef, Dispatch, SetStateAction } from "react";
+import { useEffect, useState, useRef, Dispatch, SetStateAction } from 'react';
 import {
   web3,
   BN,
   Program,
   AnchorProvider,
   setProvider,
-} from "@coral-xyz/anchor";
+  getProvider,
+} from '@coral-xyz/anchor';
 import {
   getAssociatedTokenAddress,
   createAssociatedTokenAccountInstruction,
-} from "@solana/spl-token";
-import { PublicKey, Connection, clusterApiUrl } from "@solana/web3.js";
+} from '@solana/spl-token';
+import { PublicKey, Connection, clusterApiUrl, Keypair } from '@solana/web3.js';
 // import { toast } from '@/components/ui/use-toast';
-import { Button } from "@/components/ui/button";
-import { Zap } from "lucide-react";
-import idl from "@/idl/ev_charging.json";
-import { ChargerType } from "@/types";
-import { toast } from "./ui/use-toast";
+import { Button } from '@/components/ui/button';
+import { PlugZap, Zap } from 'lucide-react';
+import idl from '@/idl/ev_charging.json';
+import { Card, CardContent } from './ui/card';
+import { ChargerType } from '@/types';
+import { Label } from './ui/label';
+import { toast } from './ui/use-toast';
 
 interface PhantomProvider {
   isPhantom?: boolean;
@@ -30,26 +33,64 @@ interface PhantomProvider {
 }
 
 const PROGRAM_ID = new web3.PublicKey(idl.address);
-const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
+const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
 const SYSTEM_PROGRAM_ID = web3.SystemProgram.programId;
 const TOKEN_PROGRAM_ID = new web3.PublicKey(
-  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+  'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'
 );
 const REWARD_MINT = new web3.PublicKey(
-  "DoEB6x9GozTZTbvN63pk8F5yrQChosm7aRA37eKPjwCH"
+  'HYbi3JvAQNDawVmndhqaDQfBaZYzW8FxsAEpTae3mzrm'
 );
 
 const getPhantomProvider = (): PhantomProvider | undefined => {
-  if (typeof window !== "undefined" && "solana" in window) {
+  if (typeof window !== 'undefined' && 'solana' in window) {
     const provider = (window as any).solana as PhantomProvider;
     if (provider.isPhantom) return provider;
   }
-  window.open("https://phantom.app/", "_blank");
+  window.open('https://phantom.app/', '_blank');
   return undefined;
 };
 
-export function ChargeButton({ charger, isCharging, setIsCharging }: { charger: ChargerType, isCharging : boolean, setIsCharging : Dispatch<SetStateAction<boolean>> }) {
-  
+async function createAtaWithRetry(
+  payer,
+  ataAddress,
+  owner,
+  mint,
+  connection,
+  wallet,
+  maxRetries = 3
+) {
+  let attempt = 0;
+  while (attempt < maxRetries) {
+    try {
+      const tx = new web3.Transaction().add(
+        createAssociatedTokenAccountInstruction(payer, ataAddress, owner, mint)
+      );
+      const latestBlockhash = await connection.getLatestBlockhash('confirmed');
+      tx.recentBlockhash = latestBlockhash.blockhash;
+      tx.feePayer = payer;
+      const signedTx = await wallet.signTransaction(tx);
+      const signature = await connection.sendRawTransaction(
+        signedTx.serialize()
+      );
+      await connection.confirmTransaction(signature, 'confirmed');
+      return signature;
+    } catch (err) {
+      attempt++;
+      console.error(`ATA creation attempt ${attempt} failed:`, err);
+      if (attempt >= maxRetries) throw err;
+      await new Promise((res) => setTimeout(res, 1000));
+    }
+  }
+}
+
+export function ChargeButton({
+  charger,
+  onSessionRecorded,
+}: {
+  charger: ChargerType;
+}) {
+  const [isCharging, setIsCharging] = useState(false);
   const [progress, setProgress] = useState(0);
   const [phantom, setPhantom] = useState<PhantomProvider | undefined>();
   const [program, setProgram] = useState<Program | null>(null);
@@ -57,7 +98,7 @@ export function ChargeButton({ charger, isCharging, setIsCharging }: { charger: 
 
   const escrowKeypairRef = useRef<web3.Keypair | null>(null);
 
-  console.log("charger ", charger);
+  // console.log('charger ', charger);
 
   // Initialize Phantom and Anchor program on mount
   useEffect(() => {
@@ -73,8 +114,8 @@ export function ChargeButton({ charger, isCharging, setIsCharging }: { charger: 
         await phantomProvider.connect();
 
         const connection = new web3.Connection(
-          "https://api.devnet.solana.com",
-          "confirmed"
+          'https://api.devnet.solana.com',
+          'confirmed'
         );
         const anchorProvider = new AnchorProvider(
           connection,
@@ -86,7 +127,7 @@ export function ChargeButton({ charger, isCharging, setIsCharging }: { charger: 
         const programInstance = new Program(idl, anchorProvider);
         setProgram(programInstance);
       } catch (err) {
-        console.error("Wallet connection failed", err);
+        console.error('Wallet connection failed', err);
         // toast.error('Failed to connect Phantom wallet');
       }
     };
@@ -95,8 +136,10 @@ export function ChargeButton({ charger, isCharging, setIsCharging }: { charger: 
 
   // Main charge handler
   const handleCharge = async () => {
+    console.log('runn');
+    if (isCharging) return; // Prevent double submission
     if (!program || !phantom || !phantom.publicKey) {
-      console.error("Wallet not connected");
+      console.error('Wallet not connected');
       return;
     }
 
@@ -105,7 +148,7 @@ export function ChargeButton({ charger, isCharging, setIsCharging }: { charger: 
     try {
       // 1. Derive user PDA
       const [userPDA] = await web3.PublicKey.findProgramAddress(
-        [Buffer.from("user"), phantom.publicKey.toBuffer()],
+        [Buffer.from('user'), phantom.publicKey.toBuffer()],
         program.programId
       );
 
@@ -117,7 +160,6 @@ export function ChargeButton({ charger, isCharging, setIsCharging }: { charger: 
         userAccount = null;
       }
       if (!userAccount) {
-        console.log("User PDA not found, creating...");
         await program.methods
           .initializeUser()
           .accounts({
@@ -126,125 +168,78 @@ export function ChargeButton({ charger, isCharging, setIsCharging }: { charger: 
             systemProgram: SYSTEM_PROGRAM_ID,
           })
           .rpc();
-        console.log("User PDA created");
       }
 
-      // 3. Generate escrow keypair for this charge session
-      const escrow = web3.Keypair.generate();
-      setEscrowKeypair(escrow);
-      escrowKeypairRef.current = escrow;
+      // 3. Charger public key
+      const chargerPubkey = charger.publicKey || charger.account.publicKey;
 
-      console.log("escow", escrow);
-      console.log("escrowKeypair", escrowKeypairRef.current);
-
-      // 4. Charger public key
-      const chargerPubkey = charger.publicKey;
-
-      // 5. Owner public key (from charger account)
+      // 4. Owner public key (from charger account)
       const ownerPubkey = new web3.PublicKey(charger.account.owner);
 
-      // 6. Derive user reward token account (ATA)
+      // 5. Derive user reward token account (ATA)
       const userRewardTokenAccount = await getAssociatedTokenAddress(
         REWARD_MINT,
         phantom.publicKey
       );
-
-      // Check if user ATA exists, create if missing
-      const userRewardAccountInfo = await connection.getAccountInfo(
+      let userRewardAccountInfo = await connection.getAccountInfo(
         userRewardTokenAccount
       );
       if (!userRewardAccountInfo) {
-        console.log("User reward token account missing, creating...");
-        const tx = new web3.Transaction().add(
-          createAssociatedTokenAccountInstruction(
-            phantom.publicKey, // payer
-            userRewardTokenAccount, // ATA to create
-            phantom.publicKey, // owner of ATA
-            REWARD_MINT // mint
-          )
+        await createAtaWithRetry(
+          phantom.publicKey,
+          userRewardTokenAccount,
+          phantom.publicKey,
+          REWARD_MINT,
+          connection,
+          phantom
         );
-
-        // Fetch recent blockhash and set fee payer
-        const latestBlockhash =
-          await connection.getLatestBlockhash("confirmed");
-        tx.recentBlockhash = latestBlockhash.blockhash;
-        tx.feePayer = phantom.publicKey;
-
-        //@ts-ignore
-        // Sign transaction
-        const signedTx = await phantom.signTransaction(tx);
-
-        // Send transaction
-        const signature = await connection.sendRawTransaction(
-          signedTx.serialize()
-        );
-
-        // Confirm transaction
-        await connection.confirmTransaction(signature, "confirmed");
-
-        console.log("User reward token account created");
       }
 
-      // 7. Derive owner reward token account (ATA)
+      // 6. Derive owner reward token account (ATA)
       const ownerRewardTokenAccount = await getAssociatedTokenAddress(
         REWARD_MINT,
         ownerPubkey
       );
-
-      // Check if owner ATA exists, create if missing
-      const ownerRewardAccountInfo = await connection.getAccountInfo(
+      let ownerRewardAccountInfo = await connection.getAccountInfo(
         ownerRewardTokenAccount
       );
       if (!ownerRewardAccountInfo) {
-        console.log("Owner reward token account missing, creating...");
-        const tx = new web3.Transaction().add(
-          createAssociatedTokenAccountInstruction(
-            phantom.publicKey, // payer (your wallet pays fees)
-            ownerRewardTokenAccount, // ATA to create
-            ownerPubkey, // owner of ATA
-            REWARD_MINT // mint
-          )
+        await createAtaWithRetry(
+          phantom.publicKey,
+          ownerRewardTokenAccount,
+          ownerPubkey,
+          REWARD_MINT,
+          connection,
+          phantom
         );
-
-        // Fetch recent blockhash and set fee payer
-        const latestBlockhash =
-          await connection.getLatestBlockhash("confirmed");
-        tx.recentBlockhash = latestBlockhash.blockhash;
-        tx.feePayer = phantom.publicKey;
-
-        //@ts-ignore
-        // Sign transaction
-        const signedTx = await phantom.signTransaction(tx);
-
-        // Send transaction
-        const signature = await connection.sendRawTransaction(
-          signedTx.serialize()
-        );
-
-        // Confirm transaction
-        await connection.confirmTransaction(signature, "confirmed");
-
-        console.log("Owner reward token account created");
       }
 
-      // 8. Derive mint authority PDA and bump
+      // 7. Derive mint authority PDA and bump
       const [mintAuthorityPda, mintAuthorityBump] =
         await web3.PublicKey.findProgramAddress(
-          [Buffer.from("mint-authority")],
+          [Buffer.from('mint-authority')],
           program.programId
         );
 
-      // 9. Amount to charge (example: 1 SOL)
-      const amountInLamports = new BN(
-        Number(charger.account.price) * web3.LAMPORTS_PER_SOL
+      // 8. Derive escrow PDA (NO Keypair, NO .signers)
+      const [escrowPDA] = await web3.PublicKey.findProgramAddress(
+        [
+          Buffer.from('escrow'),
+          phantom.publicKey.toBuffer(),
+          chargerPubkey.toBuffer(),
+        ],
+        program.programId
       );
 
-      // 10. Call startCharge instruction
+      // 9. Amount to charge
+      const amountInLamports = charger.account.price;
+
+      // 10. Call startCharge instruction (NO .signers)
       await program.methods
         .startCharge(amountInLamports, false, mintAuthorityBump)
         .accounts({
           user: userPDA,
-          escrow: escrow.publicKey,
+          escrow: escrowPDA,
           charger: chargerPubkey,
           userRewardTokenAccount,
           ownerRewardTokenAccount,
@@ -254,27 +249,62 @@ export function ChargeButton({ charger, isCharging, setIsCharging }: { charger: 
           authority: phantom.publicKey,
           systemProgram: SYSTEM_PROGRAM_ID,
         })
-        .signers([escrow])
         .rpc();
 
-      // 11. Alert user that funds are transferred to escrow
+      // 11. Record the charging session on-chain
+      const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
+      const [sessionPDA] = await web3.PublicKey.findProgramAddress(
+        [
+          Buffer.from('session'),
+          phantom.publicKey.toBuffer(),
+          Buffer.from(new BN(now).toArray('le', 8)),
+        ],
+        program.programId
+      );
+
+      await program.methods
+        .recordChargingSession(
+          charger.account.name,
+          new BN(charger.account.power),
+          new BN(amountInLamports),
+          new BN(1),
+          new BN(now)
+        )
+        .accounts({
+          session: sessionPDA,
+          user: userPDA,
+          charger: chargerPubkey,
+          authority: phantom.publicKey,
+          systemProgram: SYSTEM_PROGRAM_ID,
+        })
+        .rpc();
+      const sessionAccount =
+        await program.account.chargingSession.fetch(sessionPDA);
+      if (onSessionRecorded) {
+        onSessionRecorded(sessionAccount);
+      }
+      console.log('recordChargingSession - Session Account:', sessionAccount);
       toast({
-        variant: "default",
-        title: "Funds transferred",
-        description: "Funds transferred to escrow account!",
+        variant: 'default',
+        title: 'Funds transferred',
+        description: 'Funds transferred to escrow account!',
       });
 
-      // 12. Start charging timer or any post-charge logic
-      startChargingTimer();
+      startChargingTimer(escrowPDA, chargerPubkey, amountInLamports);
     } catch (err) {
-      console.error("Charge failed", err);
-      setIsCharging(false);
+      console.error('Charge failed', err);
+      toast({
+        variant: 'destructive',
+        title: 'Charge failed',
+        description: err.message || 'An error occurred during charging.',
+      });
     }
   };
 
   // Charging timer to track progress and release escrow at 90%
-  const startChargingTimer = () => {
-    const totalDuration = 1 * 60 * 1000; // 1 minute for demo
+  const startChargingTimer = (escrowPDA, chargerPubkey, amountInLamports) => {
+    setProgress(0); // Reset at start
+    const totalDuration = 1 * 60 * 1000;
     const interval = 1000;
     let elapsed = 0;
 
@@ -285,79 +315,58 @@ export function ChargeButton({ charger, isCharging, setIsCharging }: { charger: 
 
       if (newProgress >= 90) {
         clearInterval(timer);
-        handleReleaseEscrow();
+        handleReleaseEscrow(escrowPDA, chargerPubkey, amountInLamports);
       }
     }, interval);
   };
 
   // Release escrow when charging is 90% complete
-  const handleReleaseEscrow = async () => {
-    if (!program) {
-      console.error("no program");
-    }
-    if (!phantom) {
-      console.error("no phantom");
-      return;
-    }
-    if (!phantom.publicKey) {
-      console.error("no phantom.publicKey");
-    }
-    if (!escrowKeypairRef.current) {
-      console.error("no escrowKeypair");
-    }
-    if (
-      !program ||
-      !phantom ||
-      !phantom.publicKey ||
-      !escrowKeypairRef.current
-    ) {
-      // toast.error('Missing required data to release escrow');
-      console.error("error");
+  const handleReleaseEscrow = async (
+    escrowPDA,
+    chargerPubkey,
+    amountInLamports
+  ) => {
+    if (!program || !phantom || !phantom.publicKey) {
       setIsCharging(false);
       return;
     }
     try {
       // Derive user PDA again
       const [userPDA] = await web3.PublicKey.findProgramAddress(
-        [Buffer.from("user"), phantom.publicKey.toBuffer()],
+        [Buffer.from('user'), phantom.publicKey.toBuffer()],
         program.programId
       );
 
-      // Charger owner public key (adjust as needed)
+      // Charger owner public key
       const chargerOwnerPubkey = new web3.PublicKey(
         charger.account.owner || phantom.publicKey
-      );
-
-      // Amount to release (same as charged amount)
-      const amountInLamports = new BN(
-        Number(charger.account.price) * web3.LAMPORTS_PER_SOL
       );
 
       await program.methods
         .releaseEscrow(amountInLamports)
         .accounts({
-          escrow: escrowKeypairRef.current.publicKey,
+          escrow: escrowPDA,
           user: userPDA,
           authority: phantom.publicKey,
           recipient: chargerOwnerPubkey,
           systemProgram: web3.SystemProgram.programId,
         })
         .rpc();
-      console.log("escrow realsed success");
+
       toast({
-        variant: "default",
-        title: "Escrow Released",
-        description: "Escrow Released Successfully",
+        variant: 'default',
+        title: 'Escrow Released',
+        description: 'Escrow Released Successfully',
       });
-      // toast.success('Escrow released successfully!');
       setIsCharging(false);
       setProgress(100);
+      setTimeout(() => setProgress(0), 1000);
     } catch (err) {
-      console.error("Failed to release escrow", err);
+      console.error('Failed to release escrow', err);
       toast({
-        variant: "destructive",
-        title: "Transfer Failed",
-        description: "Failed To release Escrow",
+        variant: 'destructive',
+        title: 'Transfer Failed',
+        description: 'Failed To release Escrow',
       });
       setIsCharging(false);
     }
@@ -372,7 +381,7 @@ export function ChargeButton({ charger, isCharging, setIsCharging }: { charger: 
         disabled={isCharging}
       >
         <Zap className="mr-2 h-4 w-full" />
-        <span>{isCharging ? "Charging..." : "Start Charging"}</span>
+        <span>{isCharging ? 'Charging...' : 'Start Charging'}</span>
       </Button>
 
       {isCharging && (
