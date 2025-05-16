@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { ChargeButton } from "@/components/ChargeButton";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from 'react';
+import { ChargeButton } from '@/components/ChargeButton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
+} from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import {
   Battery,
   Calendar,
@@ -23,18 +23,32 @@ import {
   History,
   MapPin,
   Zap,
-} from "lucide-react";
-import { useUser } from "@civic/auth-web3/react";
-import { fetchChargerData } from "@/app/server/charger";
-import { Loader } from "@/components/ui/loader";
-import { ChargerType } from "@/types";
-import SelectChargeButton from "@/components/select-charger";
+} from 'lucide-react';
+import { useUser } from '@civic/auth-web3/react';
+import { fetchChargerData } from '@/app/server/charger';
+import { Loader } from '@/components/ui/loader';
+import { ChargerType } from '@/types';
+import SelectChargeButton from '@/components/select-charger';
+
+import { web3 } from '@coral-xyz/anchor';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 
 const DashBoardPage = () => {
   const [cData, setCData] = useState<ChargerType[]>();
   const [selectedCharger, setSelectedCharger] = useState<ChargerType>();
   const [loading, setLoading] = useState(false);
+  const [sessions, setSessions] = useState([]);
   const [viewAll, setViewAll] = useState(false);
+
+  const handleSessionRecorded = (session) => {
+    setSessions((prev) => [...prev, session]);
+  };
+
+  // console.log('sete', cData);
+
+  // const priceLamportsBN = selectedCharger.account.price; // BN instance
+  // const priceLamports = priceLamportsBN.toNumber(); // convert BN to number (safe for small values)
+  // const priceSOL = priceLamports / web3.LAMPORTS_PER_SOL;
 
   const getCharger = async () => {
     setLoading(true);
@@ -46,7 +60,7 @@ const DashBoardPage = () => {
     getCharger();
   }, []);
 
-  console.log("cData", cData);
+  console.log('cData', cData);
   const { user, isLoading } = useUser();
 
   // if (!user) {
@@ -60,6 +74,23 @@ const DashBoardPage = () => {
       </div>
     );
   }
+  function mapSessionToUI(session) {
+    return {
+      id: session.timestamp.toString(), // Use a unique value; timestamp is usually fine
+      location: session.chargerName,
+      date: new Date(session.timestamp.toNumber() * 1000).toLocaleString(),
+      duration: `${session.minutes} min`,
+      cost: `${session.pricePaid.toNumber() / LAMPORTS_PER_SOL} Lamports`,
+      energy: `${session.power.toString()} Wh`,
+    };
+  }
+  // {(
+  //                       selectedCharger.account.price.toNumber() /
+  //                       LAMPORTS_PER_SOL
+  //                     ).toLocaleString(undefined, {
+  //                       maximumFractionDigits: 4,
+  //                     })}{' '}
+  //                     SOL
 
   return (
     <div className="p-6 lg:p-8">
@@ -100,7 +131,7 @@ const DashBoardPage = () => {
                   <div>
                     <p className="text-sm font-medium">Token Balance</p>
                     <p className="text-2xl font-bold">
-                      {userData.tokenBalance} SOL
+                      {cData.tokenBalance} SOL
                     </p>
                   </div>
 
@@ -123,7 +154,7 @@ const DashBoardPage = () => {
                   <div>
                     <p className="text-sm font-medium">Solana Balance</p>
                     <p className="text-2xl font-bold">
-                      {userData.tokenBalance} SOL
+                      {cData.tokenBalance} SOL
                     </p>
                   </div>
                 </div>
@@ -136,29 +167,32 @@ const DashBoardPage = () => {
                   Previous Charging Sessions
                 </h3>
                 <div className="space-y-3">
-                  {userData.previousChargingSessions.map((session) => (
-                    <div
-                      key={session.id}
-                      className="flex items-center justify-between bg-muted/50 p-3 rounded-lg"
-                    >
-                      <div>
-                        <p className="font-medium">{session.location}</p>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Calendar className="mr-1 h-3 w-3" />
-                          <span>{session.date}</span>
-                          <span className="mx-2">•</span>
-                          <Clock className="mr-1 h-3 w-3" />
-                          <span>{session.duration}</span>
+                  {sessions.map((session) => {
+                    const uiSession = mapSessionToUI(session);
+                    return (
+                      <div
+                        key={uiSession.id}
+                        className="flex items-center justify-between bg-muted/50 p-3 rounded-lg"
+                      >
+                        <div>
+                          <p className="font-medium">{uiSession.location}</p>
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <Calendar className="mr-1 h-3 w-3" />
+                            <span>{uiSession.date}</span>
+                            <span className="mx-2">•</span>
+                            <Clock className="mr-1 h-3 w-3" />
+                            <span>{uiSession.duration}</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">{uiSession.cost}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {uiSession.energy}
+                          </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-medium">{session.cost}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {session.energy}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </CardContent>
@@ -206,11 +240,12 @@ const DashBoardPage = () => {
               {selectedCharger ? (
                 <div className="bg-rose-50 dark:bg-rose-950/20 p-4 rounded-lg border border-rose-200 dark:border-rose-800">
                   <div className="flex justify-between items-start mb-3">
-                    <h3 className="font-bold text-lg">
+                    <h3 className="font-bold text-lg overflow-wrap break-word">
                       {selectedCharger.account.name}
                     </h3>
                     <span className="px-2 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
-                      {chargerData.status}
+                      {/* {chargerData.status} */}
+                      available
                     </span>
                   </div>
 
@@ -218,7 +253,7 @@ const DashBoardPage = () => {
                     <MapPin className="mr-1 h-4 w-4" />
                     <span>{selectedCharger.account.address}</span>
                     <span className="mx-2">•</span>
-                    <span>{chargerData.distance}</span>
+                    <span>{cData.distance}</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 mb-4">
@@ -227,13 +262,20 @@ const DashBoardPage = () => {
                         Power Output
                       </p>
                       <p className="font-medium">
-                        {selectedCharger.account.power.length}
+                        {selectedCharger.account.power.toString()}
                       </p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Price</p>
+                      {/* <p className="font-medium">{priceSOL} SOL</p> */}
                       <p className="font-medium">
-                        {selectedCharger.account.price.length}
+                        {(
+                          selectedCharger.account.price.toNumber() /
+                          LAMPORTS_PER_SOL
+                        ).toLocaleString(undefined, {
+                          maximumFractionDigits: 4,
+                        })}{' '}
+                        SOL
                       </p>
                     </div>
                     <div>
@@ -249,7 +291,7 @@ const DashBoardPage = () => {
                         Availability
                       </p>
                       <p className="font-medium">
-                        {chargerData.currentUsers}/{chargerData.maxUsers} in use
+                        {/* {chargerData.currentUsers}/{chargerData.maxUsers} in use */}
                       </p>
                     </div>
                   </div>
@@ -262,7 +304,10 @@ const DashBoardPage = () => {
                   <Progress value={chargerData.batteryLevel} className="h-2" />
                 </div> */}
 
-                  <ChargeButton charger={selectedCharger} />
+                  <ChargeButton
+                    charger={selectedCharger}
+                    onSessionRecorded={handleSessionRecorded}
+                  />
                 </div>
               ) : (
                 <div className="bg-rose-50 text-primary dark:bg-rose-950/20 p-4 rounded-lg border border-rose-200 dark:border-rose-800">
@@ -321,52 +366,3 @@ const DashBoardPage = () => {
 };
 
 export default DashBoardPage;
-
-// Mock user data
-const userData = {
-  name: "Alex Johnson",
-  email: "alex.johnson@example.com",
-  avatar: "/placeholder.svg?height=40&width=40",
-  tokenBalance: 125.75,
-  previousChargingSessions: [
-    {
-      id: "cs-001",
-      date: "May 8, 2025",
-      location: "SolCharge Downtown",
-      duration: "45 min",
-      energy: "32.5 kWh",
-      cost: "8.13 SOL",
-    },
-    {
-      id: "cs-002",
-      date: "May 3, 2025",
-      location: "EcoCharge Plaza",
-      duration: "30 min",
-      energy: "22.1 kWh",
-      cost: "6.63 SOL",
-    },
-    {
-      id: "cs-003",
-      date: "Apr 28, 2025",
-      location: "GreenWatt Station",
-      duration: "60 min",
-      energy: "45.8 kWh",
-      cost: "10.08 SOL",
-    },
-  ],
-};
-
-// Mock charger data
-const chargerData = {
-  id: "charger-001",
-  name: "SolCharge Downtown #5",
-  location: "123 Main St, Anytown",
-  status: "Available",
-  power: "150 kW",
-  price: "0.25 SOL/kWh",
-  connectorType: "CCS, CHAdeMO",
-  currentUsers: 0,
-  maxUsers: 2,
-  distance: "0.3 miles away",
-  batteryLevel: 42,
-};

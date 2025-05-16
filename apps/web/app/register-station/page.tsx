@@ -38,21 +38,17 @@ import {
   Program,
   setProvider,
   getProvider,
-} from "@coral-xyz/anchor";
-import BN from "bn.js";
-import idl from "@/idl/ev_charging.json"; // <-- adjust path if needed
-import { Map, MapRef, Marker, MapLayerMouseEvent } from "react-map-gl/maplibre";
-import "maplibre-gl/dist/maplibre-gl.css";
-import { Label } from "@/components/ui/label";
-import { PhantomProvider, FieldType } from "@/types";
-// const programId = new web3.PublicKey(
-//   'CbhmEH9wJTGShWpyHebvj15DXFJu7TkMK7pXydc9qoQ1'
-// ); // <-- replace with your deployed program ID
+} from '@coral-xyz/anchor';
+import BN from 'bn.js';
+import idl from '@/idl/ev_charging.json'; // <-- adjust path if needed
+import { Map, MapRef, Marker, MapLayerMouseEvent } from 'react-map-gl/maplibre';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import { Label } from '@/components/ui/label';
+import { PhantomProvider, FieldType } from '@/types';
 
-// Program ID from your new IDL
 const programId = new web3.PublicKey(idl.address);
 
-const network = 'https://api.devnet.solana.com'; // or your cluster
+const network = 'https://api.devnet.solana.com';
 
 const getPhantomProvider = (): PhantomProvider | undefined => {
   if (typeof window !== 'undefined' && 'solana' in window) {
@@ -95,6 +91,8 @@ interface ViewPortType {
   longitude: number;
 }
 
+
+
 export default function RegisterStationPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -116,7 +114,7 @@ export default function RegisterStationPage() {
       chargerType: 'level2',
       power: 7,
       price: 0.25,
-      connectorTypes: 'Type 2',
+      connectorTypes: '',
       latitude: viewPort.latitude,
       longitude: viewPort.longitude,
     },
@@ -164,8 +162,13 @@ export default function RegisterStationPage() {
         payer: phantom.publicKey!,
         systemProgram: web3.SystemProgram.programId,
       });
+      const priceLamports = Math.floor(data.price * web3.LAMPORTS_PER_SOL); 
+      console.log('Price in lamports:', priceLamports);
 
-      console.log(viewPort)
+      const priceBN = new BN(priceLamports);
+      console.log('BN price:', priceBN.toString());
+
+      console.log(viewPort);
       await program.methods
         .createCharger(
           data.name,
@@ -176,7 +179,7 @@ export default function RegisterStationPage() {
           data.description || '',
           chargerTypeMap[data.chargerType],
           new BN(data.power),
-          new BN(data.price),
+          priceBN,
           data.connectorTypes,
           viewPort.latitude,
           viewPort.longitude
@@ -456,7 +459,9 @@ export default function RegisterStationPage() {
                       }}
                       interactive
                       id="mapStation"
-                      onDblClick={(e: MapLayerMouseEvent) => handleDoubleClick(e)}
+                      onDblClick={(e: MapLayerMouseEvent) =>
+                        handleDoubleClick(e)
+                      }
                       ref={myMapRef}
                       style={{
                         width: '100%',
