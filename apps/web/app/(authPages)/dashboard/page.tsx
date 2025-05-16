@@ -29,8 +29,14 @@ import { fetchChargerData } from '@/app/server/charger';
 import { Loader } from '@/components/ui/loader';
 import { ChargerType } from '@/types';
 import SelectChargeButton from '@/components/select-charger';
-
-import { web3 } from '@coral-xyz/anchor';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 
 const DashBoardPage = () => {
@@ -43,12 +49,6 @@ const DashBoardPage = () => {
   const handleSessionRecorded = (session) => {
     setSessions((prev) => [...prev, session]);
   };
-
-  // console.log('sete', cData);
-
-  // const priceLamportsBN = selectedCharger.account.price; // BN instance
-  // const priceLamports = priceLamportsBN.toNumber(); // convert BN to number (safe for small values)
-  // const priceSOL = priceLamports / web3.LAMPORTS_PER_SOL;
 
   const getCharger = async () => {
     setLoading(true);
@@ -84,13 +84,6 @@ const DashBoardPage = () => {
       energy: `${session.power.toString()} Wh`,
     };
   }
-  // {(
-  //                       selectedCharger.account.price.toNumber() /
-  //                       LAMPORTS_PER_SOL
-  //                     ).toLocaleString(undefined, {
-  //                       maximumFractionDigits: 4,
-  //                     })}{' '}
-  //                     SOL
 
   return (
     <div className="p-6 lg:p-8">
@@ -117,9 +110,26 @@ const DashBoardPage = () => {
                     <CardDescription>{user?.email}</CardDescription>
                   </div>
                 </div>
-                <Button variant="outline" size="sm">
-                  Edit Profile
-                </Button>
+
+                <Dialog>
+                  <DialogTrigger className="border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3">
+                    Edit Profile
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle className="text-3xl">Profile</DialogTitle>
+                    </DialogHeader>
+
+                    <div className="flex items-center space-x-2">
+                      <div className="grid flex-1 gap-2">
+                        <label htmlFor="name">Name : </label>
+                        <Input id="name" defaultValue={user?.name} readOnly />
+                        <label htmlFor="email">Email : </label>
+                        <Input id="email" defaultValue={user?.email} readOnly />
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardHeader>
             <CardContent>
@@ -296,14 +306,6 @@ const DashBoardPage = () => {
                     </div>
                   </div>
 
-                  {/* <div className="mb-4">
-                  <div className="flex justify-between items-center mb-1">
-                    <p className="text-sm font-medium">Your Vehicle Battery</p>
-                    <p className="text-sm">{chargerData.batteryLevel}%</p>
-                  </div>
-                  <Progress value={chargerData.batteryLevel} className="h-2" />
-                </div> */}
-
                   <ChargeButton
                     charger={selectedCharger}
                     onSessionRecorded={handleSessionRecorded}
@@ -319,13 +321,33 @@ const DashBoardPage = () => {
             <div className="space-y-6">
               <CardContent>
                 {cData &&
-                  cData.map((charger, idx) => (
-                    <SelectChargeButton
-                      key={idx}
-                      charger={charger}
-                      setSelectedCharger={setSelectedCharger}
-                    />
-                  ))}
+                  cData.map((charger, idx) =>
+                    viewAll ? (
+                      <SelectChargeButton
+                        key={idx}
+                        charger={charger}
+                        isCharging={isCharging}
+                        setSelectedCharger={setSelectedCharger}
+                      />
+                    ) : (
+                      idx < 4 && (
+                        <SelectChargeButton
+                          key={idx}
+                          charger={charger}
+                          isCharging={isCharging}
+                          setSelectedCharger={setSelectedCharger}
+                        />
+                      )
+                    )
+                  )}
+                <div className="flex justify-end items-center p-4">
+                  <Button
+                    variant={'ghost'}
+                    onClick={() => setViewAll((prev) => !prev)}
+                  >
+                    {viewAll ? 'View Less' : 'View All'}
+                  </Button>
+                </div>
               </CardContent>
             </div>
           </Card>

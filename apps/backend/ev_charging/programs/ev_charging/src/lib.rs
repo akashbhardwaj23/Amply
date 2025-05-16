@@ -263,6 +263,7 @@ pub struct UpdateCharger<'info> {
 
 #[derive(Accounts)]
 #[instruction(amount: u64, use_token: bool, mint_authority_bump: u8)]
+#[instruction(amount: u64, use_token: bool, mint_authority_bump: u8)]
 pub struct StartCharge<'info> {
     #[account(mut)]
     pub user: Account<'info, User>,

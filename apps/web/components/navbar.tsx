@@ -41,7 +41,7 @@ export default function Navbar() {
   const handleSignIn = async() => {
     setLoading(true);
     await signIn();
-    setLoading(true);
+    setLoading(false);
   }
 
   const handleSignOut = async () => {
@@ -136,7 +136,7 @@ export default function Navbar() {
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user.picture}/>
-                    <AvatarFallback>US</AvatarFallback>
+                    <AvatarFallback>{user.name?.slice(0,2) || "Na"}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>

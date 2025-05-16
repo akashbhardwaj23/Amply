@@ -17,13 +17,13 @@ import {
   Program,
   setProvider,
   getProvider,
-  AccountClient,
+  Wallet,
 } from '@coral-xyz/anchor';
 import idl from '@/idl/ev_charging.json'; // Adjust path as needed
-import { useAMap } from "@/hooks/usemap"
 import { NomanatomData, NomanatomType } from "@/types/nomanatom"
 import { PhantomProvider, Station } from '@/types';
 import { Loader } from "@/components/ui/loader";
+import { toast } from "@/hooks/use-toast";
 
 const programId = new web3.PublicKey(idl.address);
 const network = "https://api.devnet.solana.com";
@@ -64,7 +64,12 @@ export default function MapPage() {
     async function fetchStations() {
       const phantom = getPhantomProvider() as PhantomProvider;
       if (!phantom) {
-        alert("Please install Phantom Wallet!");
+        toast({
+          variant : "default",
+          title : "Install Phantom",
+          description : "Please Install Phantom Wallet"
+        })
+        // alert("Please install Phantom Wallet!");
         return;
       }
       console.log("333");
@@ -76,7 +81,7 @@ export default function MapPage() {
         const connection = new web3.Connection(network, "confirmed");
         const provider = new AnchorProvider(
           connection,
-          phantom,
+          phantom as unknown as Wallet,
           AnchorProvider.defaultOptions()
         );
         setProvider(provider);
@@ -87,6 +92,7 @@ export default function MapPage() {
         console.log("programmm", program);
 
         console.log("777");
+        //@ts-ignore
         const chargers = await program.account.charger.all();
         console.log("Chargers data:", chargers);
 

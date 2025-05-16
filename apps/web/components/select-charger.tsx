@@ -9,9 +9,11 @@ import { PlugZap } from "lucide-react";
 
 export default function SelectChargeButton({
     charger,
+    isCharging,
     setSelectedCharger
 }: {
     charger : ChargerType
+    isCharging : boolean
     setSelectedCharger : Dispatch<SetStateAction<ChargerType | undefined>>
 }){
     return (
@@ -19,16 +21,20 @@ export default function SelectChargeButton({
          <CardContent className="flex justify-between p-2">
            <div className="text-xs">
             <div className='mb-1'>
-              <Label>Charger Name :</Label>
+              <label htmlFor="name">Charge Name :</label>
+              {/* <Label>Charger Name :</Label> */}
              <h1>{charger.account.name}</h1>
             </div>
-             <div  className='flex justify-start gap-2'><Label>Price : </Label>
+             <div  className='flex justify-start gap-2'>
+              <label htmlFor="price">Price : </label>
+              {/* <Label>Price : </Label> */}
              <h2>{charger.account.price.length}</h2></div>
            </div>
            <Button
              onClick={() => setSelectedCharger(charger)}
              variant="default"
              className="px-8"
+             disabled={isCharging}
            >
             <PlugZap className="mr-2 h-4 w-4" />
             Select

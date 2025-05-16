@@ -299,9 +299,6 @@ export function ChargeButton({
         description: err.message || 'An error occurred during charging.',
       });
     }
-    // finally {
-    //   setIsCharging(false);
-    // }
   };
 
   // Charging timer to track progress and release escrow at 90%

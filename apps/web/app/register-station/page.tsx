@@ -91,8 +91,6 @@ interface ViewPortType {
   longitude: number;
 }
 
-
-
 export default function RegisterStationPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -125,7 +123,12 @@ export default function RegisterStationPage() {
     console.log('111');
     const phantom = getPhantomProvider();
     if (!phantom) {
-      alert('Please install Phantom Wallet!');
+      toast({
+        variant: 'destructive',
+        title: 'Install Wallet',
+        description: 'Please Install Phantom Wallet',
+      });
+      // alert('Please install Phantom Wallet!');
       return;
     }
 
@@ -135,7 +138,7 @@ export default function RegisterStationPage() {
       const connection = new web3.Connection(network, 'confirmed');
       const provider = new AnchorProvider(
         connection,
-        phantom,
+        phantom as unknown as Wallet,
         AnchorProvider.defaultOptions()
       );
       setProvider(provider);
@@ -162,12 +165,13 @@ export default function RegisterStationPage() {
         payer: phantom.publicKey!,
         systemProgram: web3.SystemProgram.programId,
       });
-      const priceLamports = Math.floor(data.price * web3.LAMPORTS_PER_SOL); 
+      const priceLamports = Math.floor(data.price * web3.LAMPORTS_PER_SOL);
       console.log('Price in lamports:', priceLamports);
 
       const priceBN = new BN(priceLamports);
       console.log('BN price:', priceBN.toString());
 
+      console.log(viewPort);
       console.log(viewPort);
       await program.methods
         .createCharger(
@@ -198,7 +202,15 @@ export default function RegisterStationPage() {
         systemProgram: web3.SystemProgram.programId.toBase58(),
       });
 
-      alert('Charger registered on Solana!');
+      // alert('Charger registered on Solana!');
+      toast({
+        variant: 'default',
+        title: 'Charger Register',
+        description: 'Charger Register on Solana',
+        className: cn(
+          'top-0 left-[40%] flex fixed md:max-w-[420px] md:top-4 md:right-4'
+        ),
+      });
       router.push('/register-station/success');
     } catch (err: any) {
       console.error(err);

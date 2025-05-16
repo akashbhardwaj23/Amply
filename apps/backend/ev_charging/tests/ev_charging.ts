@@ -264,6 +264,9 @@ describe('ev_charging', () => {
         tokenProgram: TOKEN_PROGRAM_ID,
         rewardMint: rewardMint,
         mintAuthorityPda: mintAuthorityPda,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        rewardMint: rewardMint,
+        mintAuthorityPda: mintAuthorityPda,
         authority: user.publicKey,
         systemProgram: SystemProgram.programId,
       })
@@ -329,12 +332,16 @@ describe('ev_charging', () => {
 
       await program.methods
         .startCharge(paymentAmount, false, mintAuthorityBump)
+        .startCharge(paymentAmount, false, mintAuthorityBump)
         .accounts({
           user: userPda,
           escrow: escrowPda,
           charger: chargerPda,
           userRewardTokenAccount: userRewardTokenAccount,
           ownerRewardTokenAccount: ownerRewardTokenAccount,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          rewardMint: rewardMint,
+          mintAuthorityPda: mintAuthorityPda,
           tokenProgram: TOKEN_PROGRAM_ID,
           rewardMint: rewardMint,
           mintAuthorityPda: mintAuthorityPda,
@@ -358,6 +365,8 @@ describe('ev_charging', () => {
     );
     assert.isAbove(
       Number(userRewardAccount.amount),
+      Number(initialUserTokens),
+      'User should have more reward tokens after 4 charges'
       Number(initialUserTokens),
       'User should have more reward tokens after 4 charges'
     );
@@ -386,6 +395,9 @@ describe('ev_charging', () => {
         charger: chargerPda,
         userRewardTokenAccount: userRewardTokenAccount,
         ownerRewardTokenAccount: ownerRewardTokenAccount,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        rewardMint: rewardMint,
+        mintAuthorityPda: mintAuthorityPda,
         tokenProgram: TOKEN_PROGRAM_ID,
         rewardMint: rewardMint,
         mintAuthorityPda: mintAuthorityPda,
@@ -572,6 +584,8 @@ describe('ev_charging', () => {
         paymentAmount, // amount in lamports
         false, // don't use token
         mintAuthorityBump // Add the bump for the mint authority PDA
+        false, // don't use token
+        mintAuthorityBump // Add the bump for the mint authority PDA
       )
       .accounts({
         user: userPda,
@@ -581,6 +595,7 @@ describe('ev_charging', () => {
         ownerRewardTokenAccount: ownerRewardTokenAccount,
         tokenProgram: TOKEN_PROGRAM_ID,
         rewardMint: rewardMint,
+        mintAuthorityPda: mintAuthorityPda,
         mintAuthorityPda: mintAuthorityPda,
         authority: user.publicKey,
         systemProgram: SystemProgram.programId,

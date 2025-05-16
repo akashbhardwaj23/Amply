@@ -47,6 +47,7 @@ export function MapComponent({
     lat: number;
     lng: number;
   } | null>(null);
+  const [navigating, setNavigating] = useState(false)
 
   const flyToThePosition = useCallback(
     (longitude: number, latitude: number) => {
@@ -150,9 +151,13 @@ export function MapComponent({
                   </div>
                   <Button
                     size="sm"
-                    onClick={() => flyToThePosition(station.lng, station.lat)}
+                    onClick={() => {
+                      setNavigating(true);
+                      flyToThePosition(station.lng, station.lat)
+                      setNavigating(false)
+                    }}
                   >
-                    Navigate
+                    {navigating ? "Navigating" : "Navigate"}
                   </Button>
                 </div>
               ))}
