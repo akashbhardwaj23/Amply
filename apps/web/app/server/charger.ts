@@ -4,9 +4,11 @@ import {
   Program,
   setProvider,
   getProvider,
+  Wallet,
 } from '@coral-xyz/anchor';
 import idl from '@/idl/ev_charging.json';
 import { getPhantomProvider } from '@/utils/utils';
+import { ChargerType } from '@/types';
 
 const network = 'https://api.devnet.solana.com';
 
@@ -17,7 +19,7 @@ export async function fetchChargerData() {
   const connection = new web3.Connection(network, 'confirmed');
   const provider = new AnchorProvider(
     connection,
-    phantom,
+    phantom! as unknown as Wallet,
     AnchorProvider.defaultOptions()
   );
   setProvider(provider);
@@ -27,7 +29,8 @@ export async function fetchChargerData() {
   const program = new Program(idl, anchorProvider);
   console.log('programddmm', program);
 
+  //@ts-ignore
   // Fetch all chargers (read-only, no wallet needed)
   const chargers = await program.account.charger.all();
-  return chargers;
+  return chargers as ChargerType[];
 }

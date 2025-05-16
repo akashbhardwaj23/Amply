@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/navigation-menu"
 import { ModeToggle } from "@/components/mode-toggle"
 import { Mic } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { VoiceCommandDialog } from "@/components/voice-command-dialog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
@@ -30,6 +30,8 @@ import { useUser } from "@civic/auth-web3/react";
 import { AvatarImage } from "@radix-ui/react-avatar"
 import { Loader } from "./ui/loader"
 import { useLoading } from "@/hooks/useLoading"
+import { ChargerType } from "@/types"
+import { fetchChargerData } from "@/app/server/charger"
 
 export default function Navbar() {
   const pathname = usePathname()
@@ -37,6 +39,17 @@ export default function Navbar() {
   const router = useRouter()
   const {loading, setLoading} = useLoading()
   const {user, isLoading, signIn, signOut} = useUser()
+  const [cData, setCData] = useState<ChargerType[]>([])
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const chargeData = await fetchChargerData();
+
+      setCData(chargeData)
+    } 
+
+    fetchData()
+  }, [])
 
   const handleSignIn = async() => {
     setLoading(true);
@@ -161,7 +174,7 @@ export default function Navbar() {
           )}
         </div>
       </div>
-      <VoiceCommandDialog open={voiceCommandOpen} onOpenChange={setVoiceCommandOpen} />
+      <VoiceCommandDialog open={voiceCommandOpen} onOpenChange={setVoiceCommandOpen} chargerData={cData} />
     </motion.header>
   )
 }

@@ -26,7 +26,7 @@ export default function Home() {
   }, []);
 
   //FIX THIS
-  if (!cData) {
+  if (!cData || loading) {
     return (
       <div>
         <Loader />
@@ -157,7 +157,7 @@ export default function Home() {
           </h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {cData?.map((charger) => <StationCard charger={charger} />)}
+          {cData?.map((charger, idx) => <StationCard key={idx} charger={charger} />)}
         </div>
       </section>
     </div>
@@ -208,6 +208,7 @@ function StationCard({ charger }: { charger: ChargerType }) {
             <div>
               <p className="text-xs text-muted-foreground">Availability</p>
               <p className="font-medium">
+                {/* //@ts-ignore */}
                 {charger.account.availability || "Available"}
               </p>
             </div>

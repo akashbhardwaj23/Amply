@@ -11,6 +11,7 @@
   "dependencies": {
     "@civic/auth-web3": "^0.5.6",
     "@coral-xyz/anchor": "^0.31.1",
+    "@google/genai": "^0.14.1",
     "@hookform/resolvers": "latest",
     "@next/env": "^15.3.1",
     "@radix-ui/react-accordion": "1.2.2",
@@ -61,6 +62,7 @@
     "motion": "^12.9.4",
     "next": "15.2.4",
     "next-themes": "latest",
+    "openai": "^4.98.0",
     "react": "^19",
     "react-dom": "^19",
     "react-hook-form": "latest",
