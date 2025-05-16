@@ -45,8 +45,9 @@ const DashBoardPage = () => {
   const [loading, setLoading] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [viewAll, setViewAll] = useState(false);
+  const [isCharging, setIsCharging] = useState(false)
 
-  const handleSessionRecorded = (session) => {
+  const handleSessionRecorded = (session : any) => {
     setSessions((prev) => [...prev, session]);
   };
 
@@ -67,6 +68,8 @@ const DashBoardPage = () => {
   //   return <div>User Not Found</div>;
   // }
 
+
+  console.log("session is ", sessions)
   if (isLoading || loading) {
     return (
       <div className="flex justify-center items-center h-72">
@@ -126,6 +129,10 @@ const DashBoardPage = () => {
                         <Input id="name" defaultValue={user?.name} readOnly />
                         <label htmlFor="email">Email : </label>
                         <Input id="email" defaultValue={user?.email} readOnly />
+
+                        <div className='flex justify-end mt-4'>
+                          <Button variant={"outline"}>Save</Button>
+                        </div>
                       </div>
                     </div>
                   </DialogContent>
@@ -307,8 +314,10 @@ const DashBoardPage = () => {
                   </div>
 
                   <ChargeButton
+                    isCharging={isCharging}
                     charger={selectedCharger}
                     onSessionRecorded={handleSessionRecorded}
+                    setIsCharging={setIsCharging}
                   />
                 </div>
               ) : (

@@ -92,7 +92,7 @@ export default function Home() {
             </div>
             <div className="flex-1 rounded-lg overflow-hidden shadow-xl">
               <img
-                src="/placeholder.svg?height=400&width=600"
+                src="/homepage.jpg"
                 alt="EV Charging Station"
                 className="w-full h-auto object-cover"
               />

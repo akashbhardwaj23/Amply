@@ -1,8 +1,8 @@
+import AIPricingPage from "../../ai-pricing/page";
+
 const DashboardAIPricing = () => {
     return (
-        <div>
-            <h1>AI Pricing</h1>
-        </div>
+        <AIPricingPage />
     );
 }
  

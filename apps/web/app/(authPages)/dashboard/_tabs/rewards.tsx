@@ -1,10 +1,9 @@
 import React from 'react';
+import RewardsPage from '../../token/page';
 
 const DashboardRewards = () => {
     return (
-        <div>
-            <h1>Tokens Rewards</h1>
-        </div>
+        <RewardsPage />
     );
 }
 

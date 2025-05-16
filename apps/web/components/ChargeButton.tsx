@@ -85,12 +85,16 @@ async function createAtaWithRetry(
 }
 
 export function ChargeButton({
+  isCharging,
   charger,
+  setIsCharging,
   onSessionRecorded,
 }: {
+  isCharging : boolean
   charger: ChargerType;
+  setIsCharging : Dispatch<SetStateAction<boolean>>
+  onSessionRecorded : any
 }) {
-  const [isCharging, setIsCharging] = useState(false);
   const [progress, setProgress] = useState(0);
   const [phantom, setPhantom] = useState<PhantomProvider | undefined>();
   const [program, setProgram] = useState<Program | null>(null);
@@ -155,6 +159,7 @@ export function ChargeButton({
       // 2. Ensure user PDA is initialized
       let userAccount = null;
       try {
+        //@ts-ignore
         userAccount = await program.account.user.fetchNullable(userPDA);
       } catch (e) {
         userAccount = null;
@@ -171,7 +176,7 @@ export function ChargeButton({
       }
 
       // 3. Charger public key
-      const chargerPubkey = charger.publicKey || charger.account.publicKey;
+      const chargerPubkey = charger.publicKey;
 
       // 4. Owner public key (from charger account)
       const ownerPubkey = new web3.PublicKey(charger.account.owner);
@@ -278,8 +283,8 @@ export function ChargeButton({
           systemProgram: SYSTEM_PROGRAM_ID,
         })
         .rpc();
-      const sessionAccount =
-        await program.account.chargingSession.fetch(sessionPDA);
+        //@ts-ignore
+      const sessionAccount = await program.account.chargingSession.fetch(sessionPDA);
       if (onSessionRecorded) {
         onSessionRecorded(sessionAccount);
       }
