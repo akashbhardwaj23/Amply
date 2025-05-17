@@ -38,6 +38,7 @@ import {
   Program,
   setProvider,
   getProvider,
+  Wallet,
 } from '@coral-xyz/anchor';
 import BN from 'bn.js';
 import idl from '@/idl/ev_charging.json'; // <-- adjust path if needed

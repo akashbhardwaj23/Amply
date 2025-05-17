@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { ChargeButton } from '@/components/ChargeButton';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { useEffect, useState } from "react";
+import { ChargeButton } from "@/components/ChargeButton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import {
   Battery,
   Calendar,
@@ -23,24 +23,25 @@ import {
   History,
   MapPin,
   Zap,
-} from 'lucide-react';
-import { useUser } from '@civic/auth-web3/react';
-import { fetchChargerData } from '@/app/server/charger';
-import { Loader } from '@/components/ui/loader';
-import { ChargerType } from '@/types';
-import SelectChargeButton from '@/components/select-charger';
+} from "lucide-react";
+import { useUser } from "@civic/auth-web3/react";
+import { fetchChargerData } from "@/app/server/charger";
+import { Loader } from "@/components/ui/loader";
+import { ChargerType } from "@/types";
+import SelectChargeButton from "@/components/select-charger";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
-import { useBalance } from '@/hooks/usebalance';
-import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-import { redirect } from 'next/navigation';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { useBalance } from "@/hooks/usebalance";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { redirect, useRouter } from "next/navigation";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
 const DashBoardPage = () => {
   const [cData, setCData] = useState<ChargerType[]>();
@@ -48,34 +49,33 @@ const DashBoardPage = () => {
   const [loading, setLoading] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [viewAll, setViewAll] = useState(false);
-  const [isCharging, setIsCharging] = useState(false)
-  const {balance} = useBalance();
+  const [isCharging, setIsCharging] = useState(false);
+  const { balance } = useBalance();
 
+  const router = useRouter();
 
-  const handleSessionRecorded = (session : any) => {
+  const handleSessionRecorded = (session: any) => {
     setSessions((prev) => [...prev, session]);
   };
 
-
   useEffect(() => {
-      const getCharger = async () => {
-    setLoading(true);
-    const chargerData = await fetchChargerData();
-    setCData(chargerData);
-    setLoading(false);
-  };
+    const getCharger = async () => {
+      setLoading(true);
+      const chargerData = await fetchChargerData();
+      setCData(chargerData);
+      setLoading(false);
+    };
     getCharger();
   }, []);
 
-  console.log('cData', cData);
+  console.log("cData", cData);
   const { user, isLoading } = useUser();
 
   // if (!user) {
   //   return <div>User Not Found</div>;
   // }
 
-
-  console.log("session is ", sessions)
+  console.log("session is ", sessions);
   if (isLoading || loading) {
     return (
       <div className="flex justify-center items-center h-72">
@@ -84,8 +84,13 @@ const DashBoardPage = () => {
     );
   }
 
-  if(!balance){
-    redirect("/")
+  if (!balance) {
+    return (
+      <div className="flex flex-col justify-center items-center h-96 gap-4">
+        <span>Please Connect Your Wallet</span>
+        <Button onClick={() => router.push("/")}>Go Back</Button>
+      </div>
+    );
   }
 
   function mapSessionToUI(session) {
@@ -141,7 +146,7 @@ const DashBoardPage = () => {
                         <label htmlFor="email">Email : </label>
                         <Input id="email" defaultValue={user?.email} readOnly />
 
-                        <div className='flex justify-end mt-4'>
+                        <div className="flex justify-end mt-4">
                           <Button variant={"outline"}>Save</Button>
                         </div>
                       </div>
@@ -181,9 +186,7 @@ const DashBoardPage = () => {
                   </div>
                   <div>
                     <p className="text-sm font-medium">Solana Balance</p>
-                    <p className="text-2xl font-bold">
-                      {balance} SOL
-                    </p>
+                    <p className="text-2xl font-bold">{balance} SOL</p>
                   </div>
                 </div>
               </div>
@@ -302,7 +305,7 @@ const DashBoardPage = () => {
                           LAMPORTS_PER_SOL
                         ).toLocaleString(undefined, {
                           maximumFractionDigits: 4,
-                        })}{' '}
+                        })}{" "}
                         SOL
                       </p>
                     </div>
@@ -362,10 +365,10 @@ const DashBoardPage = () => {
                   )}
                 <div className="flex justify-end items-center p-4">
                   <Button
-                    variant={'ghost'}
+                    variant={"ghost"}
                     onClick={() => setViewAll((prev) => !prev)}
                   >
-                    {viewAll ? 'View Less' : 'View All'}
+                    {viewAll ? "View Less" : "View All"}
                   </Button>
                 </div>
               </CardContent>
