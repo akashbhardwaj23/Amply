@@ -90,10 +90,10 @@ export function ChargeButton({
   setIsCharging,
   onSessionRecorded,
 }: {
-  isCharging : boolean
+  isCharging: boolean;
   charger: ChargerType;
-  setIsCharging : Dispatch<SetStateAction<boolean>>
-  onSessionRecorded : any
+  setIsCharging: Dispatch<SetStateAction<boolean>>;
+  onSessionRecorded: any;
 }) {
   const [progress, setProgress] = useState(0);
   const [phantom, setPhantom] = useState<PhantomProvider | undefined>();
@@ -257,7 +257,7 @@ export function ChargeButton({
         .rpc();
 
       // 11. Record the charging session on-chain
-      const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
+      const now = Math.floor(Date.now() / 1000);
       const [sessionPDA] = await web3.PublicKey.findProgramAddress(
         [
           Buffer.from('session'),
@@ -283,8 +283,9 @@ export function ChargeButton({
           systemProgram: SYSTEM_PROGRAM_ID,
         })
         .rpc();
-        //@ts-ignore
-      const sessionAccount = await program.account.chargingSession.fetch(sessionPDA);
+      //@ts-ignore
+      const sessionAccount =
+        await program.account.chargingSession.fetch(sessionPDA);
       if (onSessionRecorded) {
         onSessionRecorded(sessionAccount);
       }
