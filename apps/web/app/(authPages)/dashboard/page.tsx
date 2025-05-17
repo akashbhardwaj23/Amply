@@ -40,6 +40,7 @@ import { Input } from '@/components/ui/input';
 import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import { useBalance } from '@/hooks/usebalance';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
+import { redirect } from 'next/navigation';
 
 const DashBoardPage = () => {
   const [cData, setCData] = useState<ChargerType[]>();
@@ -84,11 +85,7 @@ const DashBoardPage = () => {
   }
 
   if(!balance){
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <Loader />
-      </div>
-    )
+    redirect("/")
   }
 
   function mapSessionToUI(session) {

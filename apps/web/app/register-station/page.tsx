@@ -45,6 +45,7 @@ import { Map, MapRef, Marker, MapLayerMouseEvent } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Label } from '@/components/ui/label';
 import { PhantomProvider, FieldType } from '@/types';
+import { cn } from '@/lib/utils';
 
 const programId = new web3.PublicKey(idl.address);
 
