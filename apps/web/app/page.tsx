@@ -9,11 +9,14 @@ import { useEffect, useState } from "react";
 import { ChargerType } from "@/types";
 import { fetchChargerData } from "./server/charger";
 import { Loader } from "@/components/ui/loader";
+import { useRouter } from "next/navigation";
+import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 
 export default function Home() {
   const [cData, setCData] = useState<ChargerType[]>();
   const [selectedCharger, setSelectedCharger] = useState<ChargerType>();
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const getCharger = async () => {
     setLoading(true);
@@ -28,7 +31,7 @@ export default function Home() {
   //FIX THIS
   if (!cData || loading) {
     return (
-      <div>
+      <div className="flex justify-center items-center h-screen">
         <Loader />
       </div>
     );
@@ -157,7 +160,9 @@ export default function Home() {
           </h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {cData?.map((charger, idx) => <StationCard key={idx} charger={charger} />)}
+          {cData?.map((charger, idx) => (
+            <StationCard key={idx} charger={charger} />
+          ))}
         </div>
       </section>
     </div>
@@ -187,17 +192,23 @@ function StationCard({ charger }: { charger: ChargerType }) {
             </div>
           </div>
           <div className="flex justify-between items-center space-x-4 text-lg">
-              <span className="flex items-center">
-                <Zap className="mr-1 h-4 w-4 text-amber-500" />
-                {charger.account.power.length} kW
-              </span>
-              <span className="flex items-center">
-                <Star className="mr-1 h-4 w-4 text-yellow-500" />
-                {charger.account.rating || "5"}
-              </span>
-              <span className="font-medium">
-                {charger.account.price.length} SOL/kWh
-              </span>
+            <span className="flex items-center">
+              <Zap className="mr-1 h-4 w-4 text-amber-500" />
+              {charger.account.power.length} kW
+            </span>
+            <span className="flex items-center">
+              <Star className="mr-1 h-4 w-4 text-yellow-500" />
+              {charger.account.rating || "5"}
+            </span>
+            <span className="font-medium">
+              {(
+                Number(charger.account.price.toString()) /
+                LAMPORTS_PER_SOL
+              ).toLocaleString(undefined, {
+                maximumFractionDigits: 4,
+              })}{" "}
+              SOL/kWh
+            </span>
           </div>
 
           <div className="flex justify-between">
@@ -209,13 +220,11 @@ function StationCard({ charger }: { charger: ChargerType }) {
               <p className="text-xs text-muted-foreground">Availability</p>
               <p className="font-medium">
                 {/* //@ts-ignore */}
-                {charger.account.availability || "Available"}
+                {charger.account.availability! || "Available"}
               </p>
             </div>
           </div>
         </div>
-
-        <Button className="w-full">Start Charging</Button>
       </CardContent>
     </Card>
   );

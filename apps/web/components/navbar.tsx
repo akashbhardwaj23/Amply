@@ -169,7 +169,7 @@ export default function Navbar() {
             <Mic className="h-5 w-5" />
           </Button>
 
-          <WalletMultiButton style={{ backgroundColor: "#d32454" }} />
+          {user && (<WalletMultiButton style={{ backgroundColor: "#d32454" }} />)}
 
           <ModeToggle />
 

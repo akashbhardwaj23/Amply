@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/sidebar"
 import { useUser } from "@civic/auth-web3/react"
 import { Loader } from "../ui/loader"
+import { useRouter } from "next/navigation"
 export function SideBarUser({
   user,
 }: {
@@ -39,7 +40,9 @@ export function SideBarUser({
   }
 }) {
   const { isMobile } = useSidebar()
-  const {signOut, isLoading} = useUser()
+  const {signOut, isLoading} = useUser();
+  const router = useRouter();
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -80,13 +83,9 @@ export function SideBarUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push("/profile")}>
                 <BadgeCheck />
                 Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCard />
-                Billing
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <Bell />

@@ -12,6 +12,7 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react"
 import { redirect } from "next/navigation"
 import { Loader } from "@/components/ui/loader"
 import { PublicKey } from "@solana/web3.js"
+import { useBalance } from "@/hooks/usebalance"
 
 // Mock user data
 const userData = {
@@ -58,31 +59,7 @@ const userData = {
 export default function RewardsPage() {
   const [activeTab, setActiveTab] = useState("earn")
   const [referralCopied, setReferralCopied] = useState(false)
-  const [balance, setBalance] = useState<number | null>(null)
-
-  const { publicKey, connected } = useWallet();
-  const { connection } = useConnection();
-
-  useEffect(() => {
-    const fetchBalance = async () => {
-      if (connected && publicKey) {
-        try {
-          const lamports = await connection.getBalance(new PublicKey(publicKey));
-          const sol = lamports / 1e9; // convert lamports to SOL
-          setBalance(sol);
-        } catch (error) {
-          console.error('Error fetching balance:', error);
-          setBalance(null);
-        }
-      }
-    };
-
-    fetchBalance();
-  }, [])
-
-  if(!connected){
-    redirect("/")
-  }
+  const {balance} = useBalance()
 
   if(!balance){
     return (
@@ -280,6 +257,7 @@ export default function RewardsPage() {
                             ) : reward.type === "Referral Bonus" ? (
                               <Share2
                                 className={`h-3.5 w-3.5 ${
+                                  //@ts-ignore
                                   reward.type === "Charging Milestone"
                                     ? "text-rose-600 dark:text-rose-400"
                                     : reward.type === "Referral Bonus"

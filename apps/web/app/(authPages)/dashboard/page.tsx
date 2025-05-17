@@ -37,7 +37,9 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
+import { useBalance } from '@/hooks/usebalance';
+import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 
 const DashBoardPage = () => {
   const [cData, setCData] = useState<ChargerType[]>();
@@ -46,18 +48,21 @@ const DashBoardPage = () => {
   const [sessions, setSessions] = useState([]);
   const [viewAll, setViewAll] = useState(false);
   const [isCharging, setIsCharging] = useState(false)
+  const {balance} = useBalance();
+
 
   const handleSessionRecorded = (session : any) => {
     setSessions((prev) => [...prev, session]);
   };
 
-  const getCharger = async () => {
+
+  useEffect(() => {
+      const getCharger = async () => {
     setLoading(true);
     const chargerData = await fetchChargerData();
     setCData(chargerData);
     setLoading(false);
   };
-  useEffect(() => {
     getCharger();
   }, []);
 
@@ -77,6 +82,15 @@ const DashBoardPage = () => {
       </div>
     );
   }
+
+  if(!balance){
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader />
+      </div>
+    )
+  }
+
   function mapSessionToUI(session) {
     return {
       id: session.timestamp.toString(), // Use a unique value; timestamp is usually fine
@@ -148,7 +162,7 @@ const DashBoardPage = () => {
                   <div>
                     <p className="text-sm font-medium">Token Balance</p>
                     <p className="text-2xl font-bold">
-                      {cData.tokenBalance} SOL
+                      {cData.tokenBalance || 0} SOL
                     </p>
                   </div>
 
@@ -171,7 +185,7 @@ const DashBoardPage = () => {
                   <div>
                     <p className="text-sm font-medium">Solana Balance</p>
                     <p className="text-2xl font-bold">
-                      {cData.tokenBalance} SOL
+                      {balance} SOL
                     </p>
                   </div>
                 </div>
@@ -270,7 +284,7 @@ const DashBoardPage = () => {
                     <MapPin className="mr-1 h-4 w-4" />
                     <span>{selectedCharger.account.address}</span>
                     <span className="mx-2">•</span>
-                    <span>{cData.distance}</span>
+                    <span>{cData.distance || 0.3}</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 mb-4">
@@ -287,7 +301,7 @@ const DashBoardPage = () => {
                       {/* <p className="font-medium">{priceSOL} SOL</p> */}
                       <p className="font-medium">
                         {(
-                          selectedCharger.account.price.toNumber() /
+                          Number(selectedCharger.account.price.toString()) /
                           LAMPORTS_PER_SOL
                         ).toLocaleString(undefined, {
                           maximumFractionDigits: 4,
