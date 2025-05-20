@@ -58,7 +58,7 @@ async function createAtaWithRetry(
   mint,
   connection,
   wallet,
-  maxRetries = 3
+  maxRetries = 1
 ) {
   let attempt = 0;
   while (attempt < maxRetries) {
@@ -139,9 +139,11 @@ export function ChargeButton({
   }, []);
 
   // Main charge handler
+  const MAX_RETRIES = 1;
+  const RETRY_DELAY_MS = 2000; // 2 seconds
+
   const handleCharge = async () => {
-    console.log('runn');
-    if (isCharging) return; // Prevent double submission
+    if (isCharging) return;
     if (!program || !phantom || !phantom.publicKey) {
       console.error('Wallet not connected');
       return;
@@ -149,161 +151,243 @@ export function ChargeButton({
 
     setIsCharging(true);
 
-    try {
-      // 1. Derive user PDA
-      const [userPDA] = await web3.PublicKey.findProgramAddress(
-        [Buffer.from('user'), phantom.publicKey.toBuffer()],
-        program.programId
-      );
-
-      // 2. Ensure user PDA is initialized
-      let userAccount = null;
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
-        //@ts-ignore
-        userAccount = await program.account.user.fetchNullable(userPDA);
-      } catch (e) {
-        userAccount = null;
-      }
-      if (!userAccount) {
-        await program.methods
-          .initializeUser()
+        // 1. Derive user PDA
+        const [userPDA] = await web3.PublicKey.findProgramAddress(
+          [Buffer.from('user'), phantom.publicKey.toBuffer()],
+          program.programId
+        );
+
+        // 2. Ensure user PDA is initialized
+        let userAccount = null;
+        try {
+          userAccount = await program.account.user.fetchNullable(userPDA);
+        } catch (e) {
+          userAccount = null;
+        }
+        if (!userAccount) {
+          await program.methods
+            .initializeUser()
+            .accounts({
+              user: userPDA,
+              authority: phantom.publicKey,
+              systemProgram: SYSTEM_PROGRAM_ID,
+            })
+            .rpc();
+        }
+
+        // 3. Charger public key
+        const chargerPubkey = charger.publicKey;
+
+        // 4. Owner public key (from charger account)
+        const ownerPubkey = new web3.PublicKey(charger.account.owner);
+
+        // 5. Derive user reward token account (ATA)
+        const userRewardTokenAccount = await getAssociatedTokenAddress(
+          REWARD_MINT,
+          phantom.publicKey
+        );
+        let userRewardAccountInfo = await connection.getAccountInfo(
+          userRewardTokenAccount
+        );
+        if (!userRewardAccountInfo) {
+          await createAtaWithRetry(
+            phantom.publicKey,
+            userRewardTokenAccount,
+            phantom.publicKey,
+            REWARD_MINT,
+            connection,
+            phantom
+          );
+        }
+
+        // 6. Derive owner reward token account (ATA)
+        const ownerRewardTokenAccount = await getAssociatedTokenAddress(
+          REWARD_MINT,
+          ownerPubkey
+        );
+        let ownerRewardAccountInfo = await connection.getAccountInfo(
+          ownerRewardTokenAccount
+        );
+        if (!ownerRewardAccountInfo) {
+          await createAtaWithRetry(
+            phantom.publicKey,
+            ownerRewardTokenAccount,
+            ownerPubkey,
+            REWARD_MINT,
+            connection,
+            phantom
+          );
+        }
+
+        // 7. Derive mint authority PDA and bump
+        const [mintAuthorityPda, mintAuthorityBump] =
+          await web3.PublicKey.findProgramAddress(
+            [Buffer.from('mint-authority')],
+            program.programId
+          );
+
+        // === NEW: Generate sessionId once ===
+        const sessionId = new BN(Date.now());
+
+        console.log('1');
+        // 8. Derive escrow PDA (now unique per charge)
+        const [escrowPDA] = await web3.PublicKey.findProgramAddress(
+          [
+            Buffer.from('escrow'),
+            phantom.publicKey.toBuffer(),
+            chargerPubkey.toBuffer(),
+            Buffer.from(sessionId.toArray('le', 8)),
+          ],
+          program.programId
+        );
+        console.log('2');
+        console.log('escrowPDA', escrowPDA.toString());
+
+        const escrowAccount = await connection.getAccountInfo(escrowPDA);
+        if (escrowAccount) {
+          console.log('Escrow account already exists for these seeds!');
+          toast({
+            variant: 'default',
+            title: 'Already charged escrow',
+            description: 'This charge has already been processed.',
+          });
+          setIsCharging(false);
+          return;
+        }
+        console.log('escrowAccount:', escrowAccount);
+        console.log('3');
+
+        // 9. Amount to charge
+        const amountInLamports = charger.account.price;
+
+        console.log('amountInLamports:', amountInLamports);
+        console.log('mintAuthorityBump:', mintAuthorityBump);
+        console.log('sessionId:', sessionId.toString());
+        console.log('userPDA:', userPDA.toBase58());
+        console.log('escrowPDA:', escrowPDA.toBase58());
+        console.log('chargerPubkey:', chargerPubkey.toBase58());
+        console.log(
+          'userRewardTokenAccount:',
+          userRewardTokenAccount.toBase58()
+        );
+        console.log(
+          'ownerRewardTokenAccount:',
+          ownerRewardTokenAccount.toBase58()
+        );
+        console.log('mintAuthorityPda:', mintAuthorityPda.toBase58());
+        console.log('phantom.publicKey:', phantom.publicKey.toBase58());
+        console.log('TOKEN_PROGRAM_ID:', TOKEN_PROGRAM_ID.toBase58());
+        console.log('REWARD_MINT:', REWARD_MINT.toBase58());
+        console.log('SYSTEM_PROGRAM_ID:', SYSTEM_PROGRAM_ID.toBase58());
+
+        console.log('////////////////////////////////////////////////////');
+        console.log('Seed 1:', Buffer.from('escrow').toString('hex'));
+        console.log('Seed 2:', phantom.publicKey.toBuffer().toString('hex'));
+        console.log('Seed 3:', chargerPubkey.toBuffer().toString('hex'));
+        console.log(
+          'Seed 4:',
+          Buffer.from(sessionId.toArray('le', 8)).toString('hex')
+        );
+
+        // 10. Call startCharge instruction (pass sessionId)
+
+        const signature = await program.methods
+          .startCharge(amountInLamports, false, mintAuthorityBump, sessionId)
           .accounts({
             user: userPDA,
+            escrow: escrowPDA,
+            charger: chargerPubkey,
+            userRewardTokenAccount,
+            ownerRewardTokenAccount,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            rewardMint: REWARD_MINT,
+            mintAuthorityPda,
             authority: phantom.publicKey,
             systemProgram: SYSTEM_PROGRAM_ID,
           })
           .rpc();
-      }
+        console.log('Transaction signature:', signature);
+        console.log('4');
+        const parsedTx = await connection.getParsedTransaction(signature);
+        console.log(parsedTx);
 
-      // 3. Charger public key
-      const chargerPubkey = charger.publicKey;
-
-      // 4. Owner public key (from charger account)
-      const ownerPubkey = new web3.PublicKey(charger.account.owner);
-
-      // 5. Derive user reward token account (ATA)
-      const userRewardTokenAccount = await getAssociatedTokenAddress(
-        REWARD_MINT,
-        phantom.publicKey
-      );
-      let userRewardAccountInfo = await connection.getAccountInfo(
-        userRewardTokenAccount
-      );
-      if (!userRewardAccountInfo) {
-        await createAtaWithRetry(
-          phantom.publicKey,
-          userRewardTokenAccount,
-          phantom.publicKey,
-          REWARD_MINT,
-          connection,
-          phantom
-        );
-      }
-
-      // 6. Derive owner reward token account (ATA)
-      const ownerRewardTokenAccount = await getAssociatedTokenAddress(
-        REWARD_MINT,
-        ownerPubkey
-      );
-      let ownerRewardAccountInfo = await connection.getAccountInfo(
-        ownerRewardTokenAccount
-      );
-      if (!ownerRewardAccountInfo) {
-        await createAtaWithRetry(
-          phantom.publicKey,
-          ownerRewardTokenAccount,
-          ownerPubkey,
-          REWARD_MINT,
-          connection,
-          phantom
-        );
-      }
-
-      // 7. Derive mint authority PDA and bump
-      const [mintAuthorityPda, mintAuthorityBump] =
-        await web3.PublicKey.findProgramAddress(
-          [Buffer.from('mint-authority')],
+        // 11. Derive session PDA (use same sessionId)
+        const [sessionPDA] = await web3.PublicKey.findProgramAddress(
+          [
+            Buffer.from('session'),
+            phantom.publicKey.toBuffer(),
+            Buffer.from(sessionId.toArray('le', 8)),
+          ],
           program.programId
         );
+        console.log('5');
 
-      // 8. Derive escrow PDA (NO Keypair, NO .signers)
-      const [escrowPDA] = await web3.PublicKey.findProgramAddress(
-        [
-          Buffer.from('escrow'),
-          phantom.publicKey.toBuffer(),
-          chargerPubkey.toBuffer(),
-        ],
-        program.programId
-      );
+        const sessionAccount =
+          await program.account.chargingSession.fetchNullable(sessionPDA);
+        console.log('6');
+        if (sessionAccount) {
+          toast({
+            variant: 'default',
+            title: 'Session already recorded sessoinaccount',
+            description: 'This charging session already exists on-chain.',
+          });
+          setIsCharging(false);
+          return;
+        }
+        console.log('7');
 
-      // 9. Amount to charge
-      const amountInLamports = charger.account.price;
+        await program.methods
+          .recordChargingSession(
+            charger.account.name,
+            new BN(charger.account.power),
+            new BN(amountInLamports),
+            new BN(1),
+            sessionId
+          )
+          .accounts({
+            session: sessionPDA,
+            user: userPDA,
+            charger: chargerPubkey,
+            authority: phantom.publicKey,
+            systemProgram: SYSTEM_PROGRAM_ID,
+          })
+          .rpc();
+        console.log('8');
 
-      // 10. Call startCharge instruction (NO .signers)
-      await program.methods
-        .startCharge(amountInLamports, false, mintAuthorityBump)
-        .accounts({
-          user: userPDA,
-          escrow: escrowPDA,
-          charger: chargerPubkey,
-          userRewardTokenAccount,
-          ownerRewardTokenAccount,
-          tokenProgram: TOKEN_PROGRAM_ID,
-          rewardMint: REWARD_MINT,
-          mintAuthorityPda,
-          authority: phantom.publicKey,
-          systemProgram: SYSTEM_PROGRAM_ID,
-        })
-        .rpc();
+        startChargingTimer(escrowPDA, chargerPubkey, amountInLamports);
 
-      // 11. Record the charging session on-chain
-      const now = Math.floor(Date.now() / 1000);
-      const [sessionPDA] = await web3.PublicKey.findProgramAddress(
-        [
-          Buffer.from('session'),
-          phantom.publicKey.toBuffer(),
-          Buffer.from(new BN(now).toArray('le', 8)),
-        ],
-        program.programId
-      );
+        setIsCharging(true);
+        break;
+      } catch (err) {
+        console.error(`Charge attempt ${attempt} failed`, err);
 
-      await program.methods
-        .recordChargingSession(
-          charger.account.name,
-          new BN(charger.account.power),
-          new BN(amountInLamports),
-          new BN(1),
-          new BN(now)
-        )
-        .accounts({
-          session: sessionPDA,
-          user: userPDA,
-          charger: chargerPubkey,
-          authority: phantom.publicKey,
-          systemProgram: SYSTEM_PROGRAM_ID,
-        })
-        .rpc();
-      //@ts-ignore
-      const sessionAccount =
-        await program.account.chargingSession.fetch(sessionPDA);
-      if (onSessionRecorded) {
-        onSessionRecorded(sessionAccount);
+        if (
+          err.message?.includes('already been processed') ||
+          err.transactionMessage?.includes('already been processed')
+        ) {
+          toast({
+            variant: 'default',
+            title: 'Transaction already processed',
+            description: 'This transaction was already confirmed on-chain.',
+          });
+          setIsCharging(false);
+          break;
+        }
+
+        if (attempt === MAX_RETRIES) {
+          toast({
+            variant: 'destructive',
+            title: 'Charge failed',
+            description: err.message || 'An error occurred during charging.',
+          });
+          setIsCharging(false);
+          return;
+        }
+
+        await new Promise((res) => setTimeout(res, RETRY_DELAY_MS));
       }
-      console.log('recordChargingSession - Session Account:', sessionAccount);
-      toast({
-        variant: 'default',
-        title: 'Funds transferred',
-        description: 'Funds transferred to escrow account!',
-      });
-
-      startChargingTimer(escrowPDA, chargerPubkey, amountInLamports);
-    } catch (err) {
-      console.error('Charge failed', err);
-      toast({
-        variant: 'destructive',
-        title: 'Charge failed',
-        description: err.message || 'An error occurred during charging.',
-      });
     }
   };
 

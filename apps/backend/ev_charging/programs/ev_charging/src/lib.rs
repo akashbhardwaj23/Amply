@@ -99,7 +99,13 @@ pub mod ev_charging {
         amount: u64,
         use_token: bool,
         mint_authority_bump: u8,
+        session_id: u64,
     ) -> Result<()> {
+        msg!("Seed 1: {:?}", b"escrow");
+        msg!("Seed 2: {:?}", ctx.accounts.authority.key());
+        msg!("Seed 3: {:?}", ctx.accounts.charger.key());
+        msg!("Seed 4: {:?}", session_id.to_le_bytes());
+
         let mut amount_in_lamports = amount;
         let user_token_acc = &ctx.accounts.user_reward_token_account;
         let owner_token_acc = &ctx.accounts.owner_reward_token_account;
@@ -262,8 +268,7 @@ pub struct UpdateCharger<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(amount: u64, use_token: bool, mint_authority_bump: u8)]
-#[instruction(amount: u64, use_token: bool, mint_authority_bump: u8)]
+#[instruction(amount: u64, use_token: bool, mint_authority_bump: u8, session_id: u64)]
 pub struct StartCharge<'info> {
     #[account(mut)]
     pub user: Account<'info, User>,
@@ -271,7 +276,7 @@ pub struct StartCharge<'info> {
     init_if_needed,
     payer = authority,
     space = 8 + Escrow::MAX_SIZE,
-    seeds = [b"escrow", authority.key().as_ref(), charger.key().as_ref()],
+    seeds = [b"escrow", authority.key().as_ref(), charger.key().as_ref(),&session_id.to_le_bytes()],
     bump
 )]
     pub escrow: Account<'info, Escrow>,

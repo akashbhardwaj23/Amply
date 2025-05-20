@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { ChargeButton } from "@/components/ChargeButton";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from 'react';
+import { ChargeButton } from '@/components/ChargeButton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
+} from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import {
   Battery,
   Calendar,
@@ -23,25 +23,25 @@ import {
   History,
   MapPin,
   Zap,
-} from "lucide-react";
-import { useUser } from "@civic/auth-web3/react";
-import { fetchChargerData } from "@/app/server/charger";
-import { Loader } from "@/components/ui/loader";
-import { ChargerType } from "@/types";
-import SelectChargeButton from "@/components/select-charger";
+} from 'lucide-react';
+import { useUser } from '@civic/auth-web3/react';
+import { fetchChargerData } from '@/app/server/charger';
+import { Loader } from '@/components/ui/loader';
+import { ChargerType } from '@/types';
+import SelectChargeButton from '@/components/select-charger';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
-import { useBalance } from "@/hooks/usebalance";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { redirect, useRouter } from "next/navigation";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
+import { useBalance } from '@/hooks/usebalance';
+import { useConnection, useWallet } from '@solana/wallet-adapter-react';
+import { redirect, useRouter } from 'next/navigation';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 const DashBoardPage = () => {
   const [cData, setCData] = useState<ChargerType[]>();
@@ -67,15 +67,18 @@ const DashBoardPage = () => {
     };
     getCharger();
   }, []);
+  useEffect(() => {
+    console.log('isCharging changed:', isCharging);
+  }, [isCharging]);
 
-  console.log("cData", cData);
+  // console.log('cData', cData);
   const { user, isLoading } = useUser();
 
   // if (!user) {
   //   return <div>User Not Found</div>;
   // }
 
-  console.log("session is ", sessions);
+  console.log('session is ', sessions);
   if (isLoading || loading) {
     return (
       <div className="flex justify-center items-center h-72">
@@ -88,7 +91,7 @@ const DashBoardPage = () => {
     return (
       <div className="flex flex-col justify-center items-center h-96 gap-4">
         <span>Please Connect Your Wallet</span>
-        <Button onClick={() => router.push("/")}>Go Back</Button>
+        <Button onClick={() => router.push('/')}>Go Back</Button>
       </div>
     );
   }
@@ -147,7 +150,7 @@ const DashBoardPage = () => {
                         <Input id="email" defaultValue={user?.email} readOnly />
 
                         <div className="flex justify-end mt-4">
-                          <Button variant={"outline"}>Save</Button>
+                          <Button variant={'outline'}>Save</Button>
                         </div>
                       </div>
                     </div>
@@ -279,14 +282,12 @@ const DashBoardPage = () => {
                       available
                     </span>
                   </div>
-
                   <div className="flex items-center text-sm text-muted-foreground mb-4">
                     <MapPin className="mr-1 h-4 w-4" />
                     <span>{selectedCharger.account.address}</span>
                     <span className="mx-2">•</span>
                     <span>{cData.distance || 0.3}</span>
                   </div>
-
                   <div className="grid grid-cols-2 gap-3 mb-4">
                     <div>
                       <p className="text-xs text-muted-foreground">
@@ -305,7 +306,7 @@ const DashBoardPage = () => {
                           LAMPORTS_PER_SOL
                         ).toLocaleString(undefined, {
                           maximumFractionDigits: 4,
-                        })}{" "}
+                        })}{' '}
                         SOL
                       </p>
                     </div>
@@ -365,10 +366,10 @@ const DashBoardPage = () => {
                   )}
                 <div className="flex justify-end items-center p-4">
                   <Button
-                    variant={"ghost"}
+                    variant={'ghost'}
                     onClick={() => setViewAll((prev) => !prev)}
                   >
-                    {viewAll ? "View Less" : "View All"}
+                    {viewAll ? 'View Less' : 'View All'}
                   </Button>
                 </div>
               </CardContent>
