@@ -97,6 +97,10 @@ const DashBoardPage = () => {
   }
 
   function mapSessionToUI(session) {
+    if (!session || !session.timestamp) {
+      // You can skip, return null, or handle as needed
+      return null;
+    }
     return {
       id: session.timestamp.toString(), // Use a unique value; timestamp is usually fine
       location: session.chargerName,

@@ -230,6 +230,7 @@ export function ChargeButton({
 
         // === NEW: Generate sessionId once ===
         const sessionId = new BN(Date.now());
+        const sessionIdLeBuffer = sessionId.toArrayLike(Buffer, 'le', 8);
 
         console.log('1');
         // 8. Derive escrow PDA (now unique per charge)
@@ -238,7 +239,8 @@ export function ChargeButton({
             Buffer.from('escrow'),
             phantom.publicKey.toBuffer(),
             chargerPubkey.toBuffer(),
-            Buffer.from(sessionId.toArray('le', 8)),
+            // Buffer.from(sessionId.toArray('le', 8)),
+            sessionIdLeBuffer,
           ],
           program.programId
         );
@@ -288,7 +290,8 @@ export function ChargeButton({
         console.log('Seed 3:', chargerPubkey.toBuffer().toString('hex'));
         console.log(
           'Seed 4:',
-          Buffer.from(sessionId.toArray('le', 8)).toString('hex')
+          // Buffer.from(sessionId.toArray('le', 8)).toString('hex')
+          Buffer.from(sessionIdLeBuffer).toString('hex')
         );
 
         // 10. Call startCharge instruction (pass sessionId)
@@ -318,24 +321,13 @@ export function ChargeButton({
           [
             Buffer.from('session'),
             phantom.publicKey.toBuffer(),
-            Buffer.from(sessionId.toArray('le', 8)),
+            // Buffer.from(sessionId.toArray('le', 8)),
+            sessionIdLeBuffer,
           ],
           program.programId
         );
         console.log('5');
 
-        const sessionAccount =
-          await program.account.chargingSession.fetchNullable(sessionPDA);
-        console.log('6');
-        if (sessionAccount) {
-          toast({
-            variant: 'default',
-            title: 'Session already recorded sessoinaccount',
-            description: 'This charging session already exists on-chain.',
-          });
-          setIsCharging(false);
-          return;
-        }
         console.log('7');
 
         await program.methods
@@ -355,6 +347,21 @@ export function ChargeButton({
           })
           .rpc();
         console.log('8');
+        const sessionAccount =
+          await program.account.chargingSession.fetchNullable(sessionPDA);
+        if (onSessionRecorded) {
+          onSessionRecorded(sessionAccount);
+        }
+        console.log('sessionAccount', sessionAccount);
+        // if (sessionAccount) {
+        //   toast({
+        //     variant: 'default',
+        //     title: 'Session already recorded sessoinaccount',
+        //     description: 'This charging session already exists on-chain.',
+        //   });
+        //   setIsCharging(false);
+        //   return;
+        // }
 
         startChargingTimer(escrowPDA, chargerPubkey, amountInLamports);
 
