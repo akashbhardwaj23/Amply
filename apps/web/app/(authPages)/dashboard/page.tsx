@@ -37,13 +37,15 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
+import { clusterApiUrl, Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { useBalance } from '@/hooks/usebalance';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { redirect, useRouter } from 'next/navigation';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { AnchorProvider, Program, setProvider, web3 } from '@coral-xyz/anchor';
 import idl from '@/idl/ev_charging.json';
+import { getTokenBal } from '@/utils/TokenBal';
+import { PublicKey } from '@solana/web3.js';
 
 const getPhantomProvider = (): PhantomProvider | undefined => {
   if (typeof window !== 'undefined' && 'solana' in window) {
@@ -53,6 +55,10 @@ const getPhantomProvider = (): PhantomProvider | undefined => {
   window.open('https://phantom.app/', '_blank');
   return undefined;
 };
+const mintAddress = new web3.PublicKey(
+  'HYbi3JvAQNDawVmndhqaDQfBaZYzW8FxsAEpTae3mzrm'
+);
+const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
 
 const DashBoardPage = () => {
   const [cData, setCData] = useState<ChargerType[]>();
@@ -63,6 +69,7 @@ const DashBoardPage = () => {
   const [isCharging, setIsCharging] = useState(() => {
     return localStorage.getItem('isCharging') === 'true';
   });
+  const [tokenBalance, setTokenBalance] = useState(null);
   const { balance } = useBalance();
   const [program, setProgram] = useState(null);
   const [phantom, setPhantom] = useState<PhantomProvider | undefined>();
@@ -71,6 +78,7 @@ const DashBoardPage = () => {
     totalSpent: 0,
     totalSessions: 0,
   });
+  const userPublicKey = phantom?.publicKey;
 
   useEffect(() => {
     if (!sessions) return;
@@ -183,6 +191,24 @@ const DashBoardPage = () => {
     setSelectedCharger(charger);
     localStorage.setItem('selectedCharger', charger.publicKey.toBase58());
   };
+
+  // async function showBalance() {
+  //   const { uiAmount, rawAmount } = await getTokenBal(
+  //     connection,
+  //     phantom?.publicKey,
+  //     'REWARD_MINT'
+  //   );
+  //   console.log('Token balance:', uiAmount, 'Raw:', rawAmount);
+  // }
+  // showBalance();
+  useEffect(() => {
+    async function fetchBalance() {
+      const result = await getTokenBal(connection, userPublicKey, mintAddress);
+      setTokenBalance(result.uiAmount);
+      console.log('result', result);
+    }
+    fetchBalance();
+  }, [userPublicKey, mintAddress]);
 
   // console.log('cData', cData);
   const { user, isLoading } = useUser();
@@ -298,7 +324,9 @@ const DashBoardPage = () => {
                   <div>
                     <p className="text-sm font-medium">Token Balance</p>
                     <p className="text-2xl font-bold">
-                      {cData.tokenBalance || 0} SOL
+                      {/* {{balance ?? "Loading..."} || 0} SOL */}
+                      {/* {tokenBalance ?? 'Loading...'} SOL */}
+                      {tokenBalance.toLocaleString(undefined, { maximumFractionDigits: 9 })} APT
                     </p>
                   </div>
 

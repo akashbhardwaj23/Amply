@@ -95,80 +95,86 @@ pub mod ev_charging {
     }
 
     pub fn start_charge(
-        ctx: Context<StartCharge>,
-        amount: u64,
-        use_token: bool,
-        mint_authority_bump: u8,
-        session_id: u64,
-    ) -> Result<()> {
-        msg!("Seed 1: {:?}", b"escrow");
-        msg!("Seed 2: {:?}", ctx.accounts.authority.key());
-        msg!("Seed 3: {:?}", ctx.accounts.charger.key());
-        msg!("Seed 4: {:?}", session_id.to_le_bytes());
+    ctx: Context<StartCharge>,
+    amount: u64,
+    use_token: bool,
+    mint_authority_bump: u8,
+    session_id: u64,
+) -> Result<()> {
+    msg!("Seed 1: {:?}", b"escrow");
+    msg!("Seed 2: {:?}", ctx.accounts.authority.key());
+    msg!("Seed 3: {:?}", ctx.accounts.charger.key());
+    msg!("Seed 4: {:?}", session_id.to_le_bytes());
 
-        let mut amount_in_lamports = amount;
-        let user_token_acc = &ctx.accounts.user_reward_token_account;
-        let owner_token_acc = &ctx.accounts.owner_reward_token_account;
+    let mut amount_in_lamports = amount;
+    let user_token_acc = &ctx.accounts.user_reward_token_account;
+    let owner_token_acc = &ctx.accounts.owner_reward_token_account;
 
-        if use_token {
-            require!(user_token_acc.amount >= 1, CustomError::NotEnoughTokens);
-            amount_in_lamports = amount_in_lamports * 75 / 100;
-            let cpi_ctx = CpiContext::new(
-                ctx.accounts.token_program.to_account_info(),
-                anchor_spl::token::Transfer {
-                    from: user_token_acc.to_account_info(),
-                    to: owner_token_acc.to_account_info(),
-                    authority: ctx.accounts.authority.to_account_info(),
-                },
-            );
-            anchor_spl::token::transfer(cpi_ctx, 1)?;
-        }
-
-        if amount_in_lamports > 0 {
-            invoke(
-                &system_instruction::transfer(
-                    &ctx.accounts.authority.key(),
-                    &ctx.accounts.escrow.key(),
-                    amount_in_lamports,
-                ),
-                &[
-                    ctx.accounts.authority.to_account_info(),
-                    ctx.accounts.escrow.to_account_info(),
-                    ctx.accounts.system_program.to_account_info(),
-                ],
-            )?;
-        }
-
-        if {
-            let user = &ctx.accounts.user;
-            user.charge_count >= 3 && !use_token
-        } {
-            let seeds = &[MINT_AUTHORITY_SEED, &[mint_authority_bump]];
-            let signer_seeds = &[&seeds[..]];
-            let cpi_accounts = MintTo {
-                mint: ctx.accounts.reward_mint.to_account_info(),
-                to: ctx.accounts.user_reward_token_account.to_account_info(),
-                authority: ctx.accounts.mint_authority_pda.to_account_info(),
-            };
-            let cpi_program = ctx.accounts.token_program.to_account_info();
-            let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds);
-            token::mint_to(cpi_ctx, 1)?;
-        }
-
-        let user = &mut ctx.accounts.user;
-        user.charge_count += 1;
-        if user.charge_count >= 4 && !use_token {
-            user.token_balance += 1;
-        }
-
-        let escrow = &mut ctx.accounts.escrow;
-        escrow.user = ctx.accounts.user.key();
-        escrow.owner = ctx.accounts.charger.owner;
-        escrow.amount = amount_in_lamports;
-        escrow.is_released = false;
-
-        Ok(())
+    // If paying with tokens, transfer 1 token (in base units) from user to owner
+    if use_token {
+        require!(user_token_acc.amount >= 1, CustomError::NotEnoughTokens);
+        amount_in_lamports = amount_in_lamports * 75 / 100;
+        let cpi_ctx = CpiContext::new(
+            ctx.accounts.token_program.to_account_info(),
+            anchor_spl::token::Transfer {
+                from: user_token_acc.to_account_info(),
+                to: owner_token_acc.to_account_info(),
+                authority: ctx.accounts.authority.to_account_info(),
+            },
+        );
+        anchor_spl::token::transfer(cpi_ctx, 1)?;
     }
+
+    // Transfer lamports to escrow if needed
+    if amount_in_lamports > 0 {
+        invoke(
+            &system_instruction::transfer(
+                &ctx.accounts.authority.key(),
+                &ctx.accounts.escrow.key(),
+                amount_in_lamports,
+            ),
+            &[
+                ctx.accounts.authority.to_account_info(),
+                ctx.accounts.escrow.to_account_info(),
+                ctx.accounts.system_program.to_account_info(),
+            ],
+        )?;
+    }
+
+    // Increment the user's charge count FIRST
+    let user = &mut ctx.accounts.user;
+    user.charge_count += 1;
+
+    // Only mint a token on every 4th charge (i.e., 4,8,12,...)
+    if user.charge_count % 4 == 0 && !use_token {
+        let seeds = &[MINT_AUTHORITY_SEED, &[mint_authority_bump]];
+        let signer_seeds = &[&seeds[..]];
+        let cpi_accounts = MintTo {
+            mint: ctx.accounts.reward_mint.to_account_info(),
+            to: ctx.accounts.user_reward_token_account.to_account_info(),
+            authority: ctx.accounts.mint_authority_pda.to_account_info(),
+        };
+        let cpi_program = ctx.accounts.token_program.to_account_info();
+        let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds);
+
+        // Mint 1 whole token (not 1 base unit)
+        let decimals = ctx.accounts.reward_mint.decimals;
+        let amount = 10u64.pow(decimals as u32);
+        token::mint_to(cpi_ctx, amount)?;
+
+        user.token_balance += 1;
+    }
+
+    // Update escrow account
+    let escrow = &mut ctx.accounts.escrow;
+    escrow.user = ctx.accounts.user.key();
+    escrow.owner = ctx.accounts.charger.owner;
+    escrow.amount = amount_in_lamports;
+    escrow.is_released = false;
+
+    Ok(())
+}
+
 
     pub fn release_escrow(ctx: Context<ReleaseEscrow>, amount: u64) -> Result<()> {
         let escrow_balance = ctx.accounts.escrow.to_account_info().lamports();
