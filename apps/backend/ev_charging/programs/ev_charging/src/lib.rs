@@ -209,7 +209,7 @@ pub mod ev_charging {
         timestamp: i64,
     ) -> Result<()> {
         let session = &mut ctx.accounts.session;
-        session.user = ctx.accounts.user.key();
+        session.user = ctx.accounts.authority.key();
         session.charger = ctx.accounts.charger.key();
         session.charger_name = charger_name;
         session.power = power;

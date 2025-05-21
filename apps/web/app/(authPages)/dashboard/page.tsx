@@ -27,7 +27,7 @@ import {
 import { useUser } from '@civic/auth-web3/react';
 import { fetchChargerData } from '@/app/server/charger';
 import { Loader } from '@/components/ui/loader';
-import { ChargerType } from '@/types';
+import { ChargerType, PhantomProvider } from '@/types';
 import SelectChargeButton from '@/components/select-charger';
 import {
   Dialog,
@@ -42,6 +42,17 @@ import { useBalance } from '@/hooks/usebalance';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { redirect, useRouter } from 'next/navigation';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { AnchorProvider, Program, setProvider, web3 } from '@coral-xyz/anchor';
+import idl from '@/idl/ev_charging.json';
+
+const getPhantomProvider = (): PhantomProvider | undefined => {
+  if (typeof window !== 'undefined' && 'solana' in window) {
+    const provider = (window as any).solana as PhantomProvider;
+    if (provider.isPhantom) return provider;
+  }
+  window.open('https://phantom.app/', '_blank');
+  return undefined;
+};
 
 const DashBoardPage = () => {
   const [cData, setCData] = useState<ChargerType[]>();
@@ -49,8 +60,36 @@ const DashBoardPage = () => {
   const [loading, setLoading] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [viewAll, setViewAll] = useState(false);
-  const [isCharging, setIsCharging] = useState(false);
+  const [isCharging, setIsCharging] = useState(() => {
+    return localStorage.getItem('isCharging') === 'true';
+  });
   const { balance } = useBalance();
+  const [program, setProgram] = useState(null);
+  const [phantom, setPhantom] = useState<PhantomProvider | undefined>();
+  const [totals, setTotals] = useState({
+    totalEnergy: 0,
+    totalSpent: 0,
+    totalSessions: 0,
+  });
+
+  useEffect(() => {
+    if (!sessions) return;
+
+    let totalEnergy = 0;
+    let totalSpent = 0;
+
+    sessions.forEach(({ account }) => {
+      // Adjust field names/types as per your ChargingSession struct
+      totalEnergy += account.power.toNumber(); // e.g., in kWh
+      totalSpent += account.pricePaid.toNumber() / 1e9; // if solSpent is in lamports, convert to SOL
+    });
+
+    setTotals({
+      totalEnergy,
+      totalSpent,
+      totalSessions: sessions.length,
+    });
+  }, [sessions]);
 
   const router = useRouter();
 
@@ -67,9 +106,83 @@ const DashBoardPage = () => {
     };
     getCharger();
   }, []);
+
   useEffect(() => {
-    console.log('isCharging changed:', isCharging);
+    if (!cData) return;
+    const storedKey = localStorage.getItem('selectedCharger');
+    if (storedKey) {
+      const found = cData.find((c) => c.publicKey.toBase58() === storedKey);
+      if (found) setSelectedCharger(found);
+    }
+  }, [cData]);
+
+  useEffect(() => {
+    if (!isCharging) {
+      setSelectedCharger(undefined);
+      localStorage.removeItem('selectedCharger');
+    }
   }, [isCharging]);
+
+  // useEffect(() => {
+  //   localStorage.setItem('isCharging', JSON.stringify(isCharging));
+  // }, [isCharging]);
+
+  useEffect(() => {
+    const init = async () => {
+      const phantomProvider = getPhantomProvider();
+      if (!phantomProvider) {
+        // toast.error('Phantom wallet not found, please install it.');
+        return;
+      }
+      setPhantom(phantomProvider);
+
+      try {
+        await phantomProvider.connect();
+
+        const connection = new web3.Connection(
+          'https://api.devnet.solana.com',
+          'confirmed'
+        );
+        const anchorProvider = new AnchorProvider(
+          connection,
+          phantomProvider as any,
+          AnchorProvider.defaultOptions()
+        );
+
+        setProvider(anchorProvider); // sets global provider for Anchor
+        const programInstance = new Program(idl, anchorProvider);
+        setProgram(programInstance);
+      } catch (err) {
+        console.error('Wallet connection failed', err);
+        // toast.error('Failed to connect Phantom wallet');
+      }
+    };
+    init();
+  }, []);
+
+  useEffect(() => {
+    const fetchSessions = async () => {
+      if (!program || !phantom?.publicKey) return;
+      // Fetch all sessions for this wallet
+      const allSessions = await program.account.chargingSession.all([
+        {
+          memcmp: {
+            offset: 8, // user is first field after discriminator
+            bytes: phantom.publicKey.toBase58(),
+          },
+        },
+      ]);
+      console.log('allSessio', allSessions);
+      setSessions(allSessions);
+    };
+
+    fetchSessions();
+  }, [program, phantom]);
+
+  const handleSelectCharger = (charger: ChargerType) => {
+    setSelectedCharger(charger);
+    localStorage.setItem('selectedCharger', charger.publicKey.toBase58());
+  };
 
   // console.log('cData', cData);
   const { user, isLoading } = useUser();
@@ -78,7 +191,6 @@ const DashBoardPage = () => {
   //   return <div>User Not Found</div>;
   // }
 
-  console.log('session is ', sessions);
   if (isLoading || loading) {
     return (
       <div className="flex justify-center items-center h-72">
@@ -96,18 +208,33 @@ const DashBoardPage = () => {
     );
   }
 
+  // console.log('session is ', session);
   function mapSessionToUI(session) {
-    if (!session || !session.timestamp) {
-      // You can skip, return null, or handle as needed
-      return null;
+    if (!session) return {};
+    let timestampNum = 0;
+    if (session.timestamp) {
+      if (typeof session.timestamp.toNumber === 'function') {
+        timestampNum = session.timestamp.toNumber();
+      } else if (typeof session.timestamp === 'number') {
+        timestampNum = session.timestamp;
+      } else {
+        timestampNum = Number(session.timestamp);
+      }
     }
+    const pricePaid = session.pricePaid?.toNumber
+      ? session.pricePaid.toNumber()
+      : Number(session.pricePaid || 0);
+    const power = session.power?.toString
+      ? session.power.toString()
+      : String(session.power || 0);
+
     return {
-      id: session.timestamp.toString(), // Use a unique value; timestamp is usually fine
-      location: session.chargerName,
-      date: new Date(session.timestamp.toNumber() * 1000).toLocaleString(),
-      duration: `${session.minutes} min`,
-      cost: `${session.pricePaid.toNumber() / LAMPORTS_PER_SOL} Lamports`,
-      energy: `${session.power.toString()} Wh`,
+      id: timestampNum.toString(),
+      location: session.chargerName || '',
+      date: new Date(timestampNum * 1000).toLocaleString(),
+      duration: `${session.minutes ?? ''} min`,
+      cost: `${pricePaid / LAMPORTS_PER_SOL} SOL`,
+      energy: `${power} Wh`,
     };
   }
 
@@ -205,32 +332,41 @@ const DashBoardPage = () => {
                   Previous Charging Sessions
                 </h3>
                 <div className="space-y-3">
-                  {sessions.map((session) => {
-                    const uiSession = mapSessionToUI(session);
-                    return (
-                      <div
-                        key={uiSession.id}
-                        className="flex items-center justify-between bg-muted/50 p-3 rounded-lg"
-                      >
-                        <div>
-                          <p className="font-medium">{uiSession.location}</p>
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <Calendar className="mr-1 h-3 w-3" />
-                            <span>{uiSession.date}</span>
-                            <span className="mx-2">•</span>
-                            <Clock className="mr-1 h-3 w-3" />
-                            <span>{uiSession.duration}</span>
+                  {sessions
+                    .sort(
+                      (a, b) =>
+                        (b.account.timestamp?.toNumber?.() ??
+                          Number(b.account.timestamp)) -
+                        (a.account.timestamp?.toNumber?.() ??
+                          Number(a.account.timestamp))
+                    )
+                    .slice(0, 4)
+                    .map((s, i) => {
+                      const uiSession = mapSessionToUI(s.account);
+                      return (
+                        <div
+                          key={s.publicKey.toBase58()}
+                          className="flex items-center justify-between bg-muted/50 p-3 rounded-lg"
+                        >
+                          <div>
+                            <p className="font-medium">{uiSession.location}</p>
+                            <div className="flex items-center text-sm text-muted-foreground">
+                              <Calendar className="mr-1 h-3 w-3" />
+                              <span>{uiSession.date}</span>
+                              <span className="mx-2">•</span>
+                              <Clock className="mr-1 h-3 w-3" />
+                              <span>{uiSession.duration}</span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-medium">{uiSession.cost}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {uiSession.energy}
+                            </p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-medium">{uiSession.cost}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {uiSession.energy}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               </div>
             </CardContent>
@@ -249,17 +385,21 @@ const DashBoardPage = () => {
                   <p className="text-sm text-muted-foreground mb-1">
                     Total Energy
                   </p>
-                  <p className="text-2xl font-bold">245.8 kWh</p>
+                  <p className="text-2xl font-bold">
+                    {totals.totalEnergy.toFixed(2)} kWh
+                  </p>
                 </div>
                 <div className="bg-muted/50 p-4 rounded-lg">
                   <p className="text-sm text-muted-foreground mb-1">
                     Total Spent
                   </p>
-                  <p className="text-2xl font-bold">61.45 SOL</p>
+                  <p className="text-2xl font-bold">
+                    {totals.totalSpent.toFixed(2)} SOL
+                  </p>
                 </div>
                 <div className="bg-muted/50 p-4 rounded-lg">
                   <p className="text-sm text-muted-foreground mb-1">Sessions</p>
-                  <p className="text-2xl font-bold">12</p>
+                  <p className="text-2xl font-bold">{totals.totalSessions}</p>
                 </div>
               </div>
             </CardContent>
@@ -355,7 +495,7 @@ const DashBoardPage = () => {
                         key={idx}
                         charger={charger}
                         isCharging={isCharging}
-                        setSelectedCharger={setSelectedCharger}
+                        setSelectedCharger={handleSelectCharger}
                       />
                     ) : (
                       idx < 4 && (
@@ -363,7 +503,7 @@ const DashBoardPage = () => {
                           key={idx}
                           charger={charger}
                           isCharging={isCharging}
-                          setSelectedCharger={setSelectedCharger}
+                          setSelectedCharger={handleSelectCharger}
                         />
                       )
                     )

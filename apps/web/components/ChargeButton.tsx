@@ -138,6 +138,52 @@ export function ChargeButton({
     init();
   }, []);
 
+  useEffect(() => {
+    if (isCharging) {
+      const chargingStart = Number(localStorage.getItem('chargingStart'));
+      const chargingDuration = Number(localStorage.getItem('chargingDuration'));
+      const escrowPDAString = localStorage.getItem('escrowPDA');
+      const chargerPubkeyString = localStorage.getItem('chargerPubkey');
+      const amountInLamportsString = localStorage.getItem('amountInLamports');
+
+      if (
+        !chargingStart ||
+        !chargingDuration ||
+        !escrowPDAString ||
+        !chargerPubkeyString ||
+        !amountInLamportsString
+      ) {
+        setProgress(0);
+        return;
+      }
+
+      const escrowPDA = new web3.PublicKey(escrowPDAString);
+      const chargerPubkey = new web3.PublicKey(chargerPubkeyString);
+      const amountInLamports = new BN(amountInLamportsString);
+
+      const updateProgress = () => {
+        const elapsed = Date.now() - chargingStart;
+        const newProgress = Math.min(100, (elapsed / chargingDuration) * 100);
+        setProgress(newProgress);
+
+        if (newProgress >= 90) {
+          handleReleaseEscrow(escrowPDA, chargerPubkey, amountInLamports);
+        }
+      };
+
+      updateProgress();
+      const interval = setInterval(updateProgress, 1000);
+      return () => clearInterval(interval);
+    } else {
+      setProgress(0);
+      localStorage.removeItem('chargingStart');
+      localStorage.removeItem('chargingDuration');
+      localStorage.removeItem('escrowPDA');
+      localStorage.removeItem('chargerPubkey');
+      localStorage.removeItem('amountInLamports');
+    }
+  }, [isCharging]);
+
   // Main charge handler
   const MAX_RETRIES = 1;
   const RETRY_DELAY_MS = 2000; // 2 seconds
@@ -150,6 +196,21 @@ export function ChargeButton({
     }
 
     setIsCharging(true);
+    localStorage.setItem('isCharging', 'true');
+
+    const userPublicKey = phantom.publicKey; // or phantom.publicKey
+
+    const userSessions = await program.account.chargingSession.all([
+      {
+        memcmp: {
+          offset: 8, // skip account discriminator, adjust if needed
+          bytes: userPublicKey.toBase58(),
+        },
+      },
+    ]);
+
+    // userSessions is an array of { publicKey, account } objects
+    console.log('User sessions:', userSessions);
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
@@ -245,7 +306,7 @@ export function ChargeButton({
           program.programId
         );
         console.log('2');
-        console.log('escrowPDA', escrowPDA.toString());
+        // console.log('escrowPDA', escrowPDA.toString());
 
         const escrowAccount = await connection.getAccountInfo(escrowPDA);
         if (escrowAccount) {
@@ -263,36 +324,6 @@ export function ChargeButton({
 
         // 9. Amount to charge
         const amountInLamports = charger.account.price;
-
-        console.log('amountInLamports:', amountInLamports);
-        console.log('mintAuthorityBump:', mintAuthorityBump);
-        console.log('sessionId:', sessionId.toString());
-        console.log('userPDA:', userPDA.toBase58());
-        console.log('escrowPDA:', escrowPDA.toBase58());
-        console.log('chargerPubkey:', chargerPubkey.toBase58());
-        console.log(
-          'userRewardTokenAccount:',
-          userRewardTokenAccount.toBase58()
-        );
-        console.log(
-          'ownerRewardTokenAccount:',
-          ownerRewardTokenAccount.toBase58()
-        );
-        console.log('mintAuthorityPda:', mintAuthorityPda.toBase58());
-        console.log('phantom.publicKey:', phantom.publicKey.toBase58());
-        console.log('TOKEN_PROGRAM_ID:', TOKEN_PROGRAM_ID.toBase58());
-        console.log('REWARD_MINT:', REWARD_MINT.toBase58());
-        console.log('SYSTEM_PROGRAM_ID:', SYSTEM_PROGRAM_ID.toBase58());
-
-        console.log('////////////////////////////////////////////////////');
-        console.log('Seed 1:', Buffer.from('escrow').toString('hex'));
-        console.log('Seed 2:', phantom.publicKey.toBuffer().toString('hex'));
-        console.log('Seed 3:', chargerPubkey.toBuffer().toString('hex'));
-        console.log(
-          'Seed 4:',
-          // Buffer.from(sessionId.toArray('le', 8)).toString('hex')
-          Buffer.from(sessionIdLeBuffer).toString('hex')
-        );
 
         // 10. Call startCharge instruction (pass sessionId)
 
@@ -350,18 +381,12 @@ export function ChargeButton({
         const sessionAccount =
           await program.account.chargingSession.fetchNullable(sessionPDA);
         if (onSessionRecorded) {
-          onSessionRecorded(sessionAccount);
+          onSessionRecorded({
+            publicKey: sessionPDA,
+            account: sessionAccount,
+          });
         }
         console.log('sessionAccount', sessionAccount);
-        // if (sessionAccount) {
-        //   toast({
-        //     variant: 'default',
-        //     title: 'Session already recorded sessoinaccount',
-        //     description: 'This charging session already exists on-chain.',
-        //   });
-        //   setIsCharging(false);
-        //   return;
-        // }
 
         startChargingTimer(escrowPDA, chargerPubkey, amountInLamports);
 
@@ -402,6 +427,9 @@ export function ChargeButton({
   const startChargingTimer = (escrowPDA, chargerPubkey, amountInLamports) => {
     setProgress(0); // Reset at start
     const totalDuration = 1 * 60 * 1000;
+    const chargingStart = Date.now();
+    localStorage.setItem('chargingStart', chargingStart.toString());
+    localStorage.setItem('chargingDuration', totalDuration.toString());
     const interval = 1000;
     let elapsed = 0;
 
@@ -456,6 +484,7 @@ export function ChargeButton({
         description: 'Escrow Released Successfully',
       });
       setIsCharging(false);
+      localStorage.setItem('isCharging', 'false');
       setProgress(100);
       setTimeout(() => setProgress(0), 1000);
     } catch (err) {
