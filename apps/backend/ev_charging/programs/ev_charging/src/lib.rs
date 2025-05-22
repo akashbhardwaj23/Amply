@@ -113,7 +113,13 @@ pub mod ev_charging {
     // If paying with tokens, transfer 1 token (in base units) from user to owner
     if use_token {
         require!(user_token_acc.amount >= 1, CustomError::NotEnoughTokens);
-        amount_in_lamports = amount_in_lamports * 75 / 100;
+        // amount_in_lamports = amount_in_lamports * 75 / 100;
+        let discount = 100_000_000u64;
+        if amount_in_lamports > discount {
+            amount_in_lamports -= discount;
+        }else {
+            amount_in_lamports = 0;
+        }
         let cpi_ctx = CpiContext::new(
             ctx.accounts.token_program.to_account_info(),
             anchor_spl::token::Transfer {
