@@ -9,6 +9,10 @@ import { getAssociatedTokenAddress } from '@solana/spl-token';
  * @returns {Promise<{ uiAmount: number|null, rawAmount: string }>}
  */
 export async function getTokenBal(connection, userPublicKey, mintAddress) {
+  if (!userPublicKey || !mintAddress) {
+    throw new Error('userPublicKey and mintAddress are required');
+  }
+  
   const mint = new PublicKey(mintAddress);
   const user = new PublicKey(userPublicKey);
 
