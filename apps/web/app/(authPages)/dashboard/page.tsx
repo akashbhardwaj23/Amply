@@ -215,8 +215,8 @@ const DashBoardPage = () => {
 
     async function fetchBalance() {
       const result = await getTokenBal(connection, userPublicKey, mintAddress);
-      setTokenBalance(result.uiAmount);
-      console.log('result', result);
+      setTokenBalance(result.uiAmount || 0);
+      // console.log('result', result);
     }
     fetchBalance();
   }, [userPublicKey, mintAddress]);
@@ -277,10 +277,9 @@ const DashBoardPage = () => {
 
   const originalPriceLamports = selectedCharger?.account.price || 0;
   const discountLamports = 0.1 * LAMPORTS_PER_SOL;
-  const discountedPriceLamports = Math.max(
-    0,
-    originalPriceLamports - discountLamports
-  );
+  const discountedPriceLamports = useToken
+    ? Math.max(0, originalPriceLamports - discountLamports)
+    : originalPriceLamports;
 
   const originalPriceSOL = originalPriceLamports / LAMPORTS_PER_SOL;
   const discountedPriceSOL = discountedPriceLamports / LAMPORTS_PER_SOL;
@@ -363,17 +362,21 @@ const DashBoardPage = () => {
                       className="text-primary bg-white"
                       checked={useToken}
                       onCheckedChange={setUseToken}
+                      disabled={(tokenBalance ?? 0) < 1 || isCharging}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <Button size="sm">
+                  <Button
+                    size="sm"
+                    onClick={() => alert('Still in development!')}
+                  >
                     <Zap className="mr-2 h-4 w-4" />
                     Add Tokens
                   </Button>
 
-                  <p>
+                  {/* <p>
                     Price: {originalPriceSOL.toFixed(4)} SOL
                     {useToken && (
                       <>
@@ -385,7 +388,7 @@ const DashBoardPage = () => {
                         (0.1 SOL discount)
                       </>
                     )}
-                  </p>
+                  </p> */}
                 </div>
               </div>
 
@@ -519,17 +522,31 @@ const DashBoardPage = () => {
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Price</p>
-                      {/* <p className="font-medium">{priceSOL} SOL</p> */}
                       <p className="font-medium">
                         {(
-                          Number(selectedCharger.account.price.toString()) /
-                          LAMPORTS_PER_SOL
+                          discountedPriceLamports / LAMPORTS_PER_SOL
                         ).toLocaleString(undefined, {
                           maximumFractionDigits: 4,
                         })}{' '}
                         SOL
+                        {useToken && (
+                          <span className="ml-2 text-xs text-green-600">
+                            (discounted)
+                          </span>
+                        )}
                       </p>
+                      {useToken && (
+                        <p className="text-xs text-muted-foreground line-through">
+                          {(
+                            originalPriceLamports / LAMPORTS_PER_SOL
+                          ).toLocaleString(undefined, {
+                            maximumFractionDigits: 4,
+                          })}{' '}
+                          SOL
+                        </p>
+                      )}
                     </div>
+
                     <div>
                       <p className="text-xs text-muted-foreground">
                         Connector Types
@@ -555,6 +572,7 @@ const DashBoardPage = () => {
                     setIsCharging={setIsCharging}
                     useToken={useToken}
                     amountInLamports={amountInLamports}
+                    // fetchBalance={fetchBalance}
                   />
                 </div>
               ) : (

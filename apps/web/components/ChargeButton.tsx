@@ -28,6 +28,7 @@ import { Card, CardContent } from './ui/card';
 import { ChargerType } from '@/types';
 import { Label } from './ui/label';
 import { toast } from './ui/use-toast';
+import { getTokenBal } from '@/utils/TokenBal';
 
 interface PhantomProvider {
   isPhantom?: boolean;
@@ -56,6 +57,7 @@ const getPhantomProvider = (): PhantomProvider | undefined => {
   window.open('https://phantom.app/', '_blank');
   return undefined;
 };
+
 
 async function createAtaWithRetry(
   payer,
@@ -230,7 +232,7 @@ export function ChargeButton({
       },
     ]);
 
-    console.log('User sessions:', userSessions);
+    // console.log('User sessions:', userSessions);
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
@@ -353,7 +355,7 @@ export function ChargeButton({
           })
           .rpc();
 
-        console.log('Transaction signature:', signature);
+        // console.log('Transaction signature:', signature);
 
         // 12. Derive session PDA
         const [sessionPDA] = await web3.PublicKey.findProgramAddress(
@@ -477,7 +479,6 @@ export function ChargeButton({
       const amountBN = BN.isBN(amountInLamports)
         ? amountInLamports
         : new BN(amountInLamports);
-      localStorage.setItem('isCharging', 'false');
 
       await program.methods
         .releaseEscrow(amountBN)
@@ -490,6 +491,8 @@ export function ChargeButton({
         })
         .rpc();
 
+      localStorage.setItem('isCharging', 'false');
+      
       toast({
         variant: 'default',
         title: 'Escrow Released',

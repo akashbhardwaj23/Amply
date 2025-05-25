@@ -101,25 +101,34 @@ pub mod ev_charging {
     mint_authority_bump: u8,
     session_id: u64,
 ) -> Result<()> {
-    msg!("Seed 1: {:?}", b"escrow");
-    msg!("Seed 2: {:?}", ctx.accounts.authority.key());
-    msg!("Seed 3: {:?}", ctx.accounts.charger.key());
-    msg!("Seed 4: {:?}", session_id.to_le_bytes());
+    // msg!("Seed 1: {:?}", b"escrow");
+    // msg!("Seed 2: {:?}", ctx.accounts.authority.key());
+    // msg!("Seed 3: {:?}", ctx.accounts.charger.key());
+    // msg!("Seed 4: {:?}", session_id.to_le_bytes());
 
     let mut amount_in_lamports = amount;
     let user_token_acc = &ctx.accounts.user_reward_token_account;
     let owner_token_acc = &ctx.accounts.owner_reward_token_account;
 
-    // If paying with tokens, transfer 1 token (in base units) from user to owner
     if use_token {
-        require!(user_token_acc.amount >= 1, CustomError::NotEnoughTokens);
-        // amount_in_lamports = amount_in_lamports * 75 / 100;
-        let discount = 100_000_000u64;
+        // Get token decimals to calculate the correct token amount (1 whole token)
+        let decimals = ctx.accounts.reward_mint.decimals;
+        let token_amount = 10u64.pow(decimals as u32);
+
+        require!(
+            user_token_acc.amount >= token_amount,
+            CustomError::NotEnoughTokens
+        );
+
+        // Apply discount to amount_in_lamports
+        let discount = 100_000_000u64; // 0.1 SOL discount in lamports
         if amount_in_lamports > discount {
             amount_in_lamports -= discount;
-        }else {
+        } else {
             amount_in_lamports = 0;
         }
+
+        // Transfer 1 token from user to owner
         let cpi_ctx = CpiContext::new(
             ctx.accounts.token_program.to_account_info(),
             anchor_spl::token::Transfer {
@@ -128,7 +137,7 @@ pub mod ev_charging {
                 authority: ctx.accounts.authority.to_account_info(),
             },
         );
-        anchor_spl::token::transfer(cpi_ctx, 1)?;
+        anchor_spl::token::transfer(cpi_ctx, token_amount)?;
     }
 
     // Transfer lamports to escrow if needed
@@ -151,7 +160,7 @@ pub mod ev_charging {
     let user = &mut ctx.accounts.user;
     user.charge_count += 1;
 
-    // Only mint a token on every 4th charge (i.e., 4,8,12,...)
+    // Only mint a token on every 4th charge (i.e., 4,8,12,...) and if not using token discount
     if user.charge_count % 4 == 0 && !use_token {
         let seeds = &[MINT_AUTHORITY_SEED, &[mint_authority_bump]];
         let signer_seeds = &[&seeds[..]];
@@ -163,7 +172,7 @@ pub mod ev_charging {
         let cpi_program = ctx.accounts.token_program.to_account_info();
         let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds);
 
-        // Mint 1 whole token (not 1 base unit)
+        // Mint 1 whole token (adjusted for decimals)
         let decimals = ctx.accounts.reward_mint.decimals;
         let amount = 10u64.pow(decimals as u32);
         token::mint_to(cpi_ctx, amount)?;
@@ -180,6 +189,7 @@ pub mod ev_charging {
 
     Ok(())
 }
+
 
 
  pub fn release_escrow(ctx: Context<ReleaseEscrow>, _amount: u64) -> Result<()> {
