@@ -13,7 +13,13 @@ import {
   getAssociatedTokenAddress,
   createAssociatedTokenAccountInstruction,
 } from '@solana/spl-token';
-import { PublicKey, Connection, clusterApiUrl, Keypair } from '@solana/web3.js';
+import {
+  PublicKey,
+  Connection,
+  clusterApiUrl,
+  Keypair,
+  LAMPORTS_PER_SOL,
+} from '@solana/web3.js';
 // import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { PlugZap, Zap } from 'lucide-react';
@@ -89,11 +95,15 @@ export function ChargeButton({
   charger,
   setIsCharging,
   onSessionRecorded,
+  useToken,
+  amountInLamports,
 }: {
   isCharging: boolean;
   charger: ChargerType;
   setIsCharging: Dispatch<SetStateAction<boolean>>;
   onSessionRecorded: any;
+  useToken: boolean;
+  amountInLamports: number;
 }) {
   const [progress, setProgress] = useState(0);
   const [phantom, setPhantom] = useState<PhantomProvider | undefined>();
@@ -188,6 +198,8 @@ export function ChargeButton({
   const MAX_RETRIES = 1;
   const RETRY_DELAY_MS = 2000; // 2 seconds
 
+  const discountLamports = 0.1 * LAMPORTS_PER_SOL; // 0.1 SOL discount
+
   const handleCharge = async () => {
     if (isCharging) return;
     if (!program || !phantom || !phantom.publicKey) {
@@ -198,18 +210,26 @@ export function ChargeButton({
     setIsCharging(true);
     localStorage.setItem('isCharging', 'true');
 
-    const userPublicKey = phantom.publicKey; // or phantom.publicKey
+    const userPublicKey = phantom.publicKey;
+
+    // Calculate discounted amount in lamports
+    const originalPriceLamports = charger.account.price;
+    const discountedAmountLamports = useToken
+      ? Math.max(0, originalPriceLamports - discountLamports)
+      : originalPriceLamports;
+
+    // Wrap amount in BN for Anchor
+    const amountInLamports = new BN(discountedAmountLamports);
 
     const userSessions = await program.account.chargingSession.all([
       {
         memcmp: {
-          offset: 8, // skip account discriminator, adjust if needed
+          offset: 8,
           bytes: userPublicKey.toBase58(),
         },
       },
     ]);
 
-    // userSessions is an array of { publicKey, account } objects
     console.log('User sessions:', userSessions);
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -224,7 +244,7 @@ export function ChargeButton({
         let userAccount = null;
         try {
           userAccount = await program.account.user.fetchNullable(userPDA);
-        } catch (e) {
+        } catch {
           userAccount = null;
         }
         if (!userAccount) {
@@ -241,7 +261,7 @@ export function ChargeButton({
         // 3. Charger public key
         const chargerPubkey = charger.publicKey;
 
-        // 4. Owner public key (from charger account)
+        // 4. Owner public key
         const ownerPubkey = new web3.PublicKey(charger.account.owner);
 
         // 5. Derive user reward token account (ATA)
@@ -289,28 +309,24 @@ export function ChargeButton({
             program.programId
           );
 
-        // === NEW: Generate sessionId once ===
+        // 8. Generate sessionId once as BN
         const sessionId = new BN(Date.now());
         const sessionIdLeBuffer = sessionId.toArrayLike(Buffer, 'le', 8);
 
-        console.log('1');
-        // 8. Derive escrow PDA (now unique per charge)
+        // 9. Derive escrow PDA
         const [escrowPDA] = await web3.PublicKey.findProgramAddress(
           [
             Buffer.from('escrow'),
             phantom.publicKey.toBuffer(),
             chargerPubkey.toBuffer(),
-            // Buffer.from(sessionId.toArray('le', 8)),
             sessionIdLeBuffer,
           ],
           program.programId
         );
-        console.log('2');
-        // console.log('escrowPDA', escrowPDA.toString());
 
+        // 10. Check if escrow already exists
         const escrowAccount = await connection.getAccountInfo(escrowPDA);
         if (escrowAccount) {
-          console.log('Escrow account already exists for these seeds!');
           toast({
             variant: 'default',
             title: 'Already charged escrow',
@@ -319,16 +335,10 @@ export function ChargeButton({
           setIsCharging(false);
           return;
         }
-        console.log('escrowAccount:', escrowAccount);
-        console.log('3');
 
-        // 9. Amount to charge
-        const amountInLamports = charger.account.price;
-
-        // 10. Call startCharge instruction (pass sessionId)
-
+        // 11. Call startCharge with BN amount and useToken flag
         const signature = await program.methods
-          .startCharge(amountInLamports, false, mintAuthorityBump, sessionId)
+          .startCharge(amountInLamports, useToken, mintAuthorityBump, sessionId)
           .accounts({
             user: userPDA,
             escrow: escrowPDA,
@@ -342,30 +352,25 @@ export function ChargeButton({
             systemProgram: SYSTEM_PROGRAM_ID,
           })
           .rpc();
-        console.log('Transaction signature:', signature);
-        console.log('4');
-        const parsedTx = await connection.getParsedTransaction(signature);
-        console.log(parsedTx);
 
-        // 11. Derive session PDA (use same sessionId)
+        console.log('Transaction signature:', signature);
+
+        // 12. Derive session PDA
         const [sessionPDA] = await web3.PublicKey.findProgramAddress(
           [
             Buffer.from('session'),
             phantom.publicKey.toBuffer(),
-            // Buffer.from(sessionId.toArray('le', 8)),
             sessionIdLeBuffer,
           ],
           program.programId
         );
-        console.log('5');
 
-        console.log('7');
-
+        // 13. Record charging session
         await program.methods
           .recordChargingSession(
             charger.account.name,
             new BN(charger.account.power),
-            new BN(amountInLamports),
+            amountInLamports,
             new BN(1),
             sessionId
           )
@@ -377,7 +382,7 @@ export function ChargeButton({
             systemProgram: SYSTEM_PROGRAM_ID,
           })
           .rpc();
-        console.log('8');
+
         const sessionAccount =
           await program.account.chargingSession.fetchNullable(sessionPDA);
         if (onSessionRecorded) {
@@ -386,8 +391,8 @@ export function ChargeButton({
             account: sessionAccount,
           });
         }
-        console.log('sessionAccount', sessionAccount);
 
+        // 14. Start charging timer
         startChargingTimer(escrowPDA, chargerPubkey, amountInLamports);
 
         setIsCharging(true);
@@ -425,7 +430,7 @@ export function ChargeButton({
 
   // Charging timer to track progress and release escrow at 90%
   const startChargingTimer = (escrowPDA, chargerPubkey, amountInLamports) => {
-    setProgress(0); // Reset at start
+    setProgress(0);
     const totalDuration = 1 * 60 * 1000;
     const chargingStart = Date.now();
     localStorage.setItem('chargingStart', chargingStart.toString());
@@ -455,6 +460,7 @@ export function ChargeButton({
       setIsCharging(false);
       return;
     }
+
     try {
       // Derive user PDA again
       const [userPDA] = await web3.PublicKey.findProgramAddress(
@@ -467,8 +473,14 @@ export function ChargeButton({
         charger.account.owner || phantom.publicKey
       );
 
+      // Wrap amount in BN if needed
+      const amountBN = BN.isBN(amountInLamports)
+        ? amountInLamports
+        : new BN(amountInLamports);
+      localStorage.setItem('isCharging', 'false');
+
       await program.methods
-        .releaseEscrow(amountInLamports)
+        .releaseEscrow(amountBN)
         .accounts({
           escrow: escrowPDA,
           user: userPDA,
@@ -484,7 +496,6 @@ export function ChargeButton({
         description: 'Escrow Released Successfully',
       });
       setIsCharging(false);
-      localStorage.setItem('isCharging', 'false');
       setProgress(100);
       setTimeout(() => setProgress(0), 1000);
     } catch (err) {

@@ -182,34 +182,40 @@ pub mod ev_charging {
 }
 
 
-    pub fn release_escrow(ctx: Context<ReleaseEscrow>, amount: u64) -> Result<()> {
-        let escrow_balance = ctx.accounts.escrow.to_account_info().lamports();
-        let rent_exemption = Rent::get()?.minimum_balance(0);
+ pub fn release_escrow(ctx: Context<ReleaseEscrow>, _amount: u64) -> Result<()> {
+    // Do all immutable reads first
+    let escrow_balance = ctx.accounts.escrow.to_account_info().lamports();
+    let rent_exemption = Rent::get()?.minimum_balance(0);
+    let amount = ctx.accounts.escrow.amount;
+    let charger_owner = ctx.accounts.escrow.owner;
 
-        require!(
-            escrow_balance >= amount + rent_exemption,
-            CustomError::InsufficientFunds
-        );
+    require!(
+        escrow_balance >= amount + rent_exemption,
+        CustomError::InsufficientFunds
+    );
 
-        let transfer_amount = amount.min(escrow_balance - rent_exemption);
-        let charger_owner = ctx.accounts.escrow.owner;
+    let transfer_amount = amount.min(escrow_balance - rent_exemption);
 
-        let recipient_info = if ctx.accounts.authority.key() == charger_owner {
-            ctx.accounts.authority.to_account_info()
-        } else {
-            ctx.accounts.recipient.to_account_info()
-        };
+    let recipient_info = if ctx.accounts.authority.key() == charger_owner {
+        ctx.accounts.authority.to_account_info()
+    } else {
+        ctx.accounts.recipient.to_account_info()
+    };
 
-        **ctx
-            .accounts
-            .escrow
-            .to_account_info()
-            .try_borrow_mut_lamports()? -= transfer_amount;
-        **recipient_info.try_borrow_mut_lamports()? += transfer_amount;
+    // Now take mutable reference for the rest
+    // Transfer lamports from escrow to recipient
+    **ctx.accounts.escrow.to_account_info().try_borrow_mut_lamports()? -= transfer_amount;
+    **recipient_info.try_borrow_mut_lamports()? += transfer_amount;
 
-        ctx.accounts.escrow.is_released = true;
-        Ok(())
-    }
+    // Now take mutable reference and update is_released
+    let escrow = &mut ctx.accounts.escrow;
+    escrow.is_released = true;
+
+    Ok(())
+}
+
+
+
 
     // NEW: Record a charging session and update user stats
     pub fn record_charging_session(

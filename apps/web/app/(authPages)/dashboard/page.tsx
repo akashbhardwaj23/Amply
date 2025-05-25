@@ -42,7 +42,13 @@ import { useBalance } from '@/hooks/usebalance';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { redirect, useRouter } from 'next/navigation';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { AnchorProvider, Program, setProvider, web3 } from '@coral-xyz/anchor';
+import {
+  AnchorProvider,
+  Program,
+  setProvider,
+  web3,
+  BN,
+} from '@coral-xyz/anchor';
 import idl from '@/idl/ev_charging.json';
 import { getTokenBal } from '@/utils/TokenBal';
 import { PublicKey } from '@solana/web3.js';
@@ -78,6 +84,7 @@ const DashBoardPage = () => {
     totalSpent: 0,
     totalSessions: 0,
   });
+  const [useToken, setUseToken] = useState(false);
   const userPublicKey = phantom?.publicKey;
 
   useEffect(() => {
@@ -87,7 +94,6 @@ const DashBoardPage = () => {
     let totalSpent = 0;
 
     sessions.forEach(({ account }) => {
-      // Adjust field names/types as per your ChargingSession struct
       totalEnergy += account.power.toNumber(); // e.g., in kWh
       totalSpent += account.pricePaid.toNumber() / 1e9; // if solSpent is in lamports, convert to SOL
     });
@@ -202,6 +208,11 @@ const DashBoardPage = () => {
   // }
   // showBalance();
   useEffect(() => {
+    if (!phantom?.publicKey || !mintAddress) {
+      // Don't call getTokenBal if either is missing!
+      return;
+    }
+
     async function fetchBalance() {
       const result = await getTokenBal(connection, userPublicKey, mintAddress);
       setTokenBalance(result.uiAmount);
@@ -257,12 +268,25 @@ const DashBoardPage = () => {
     return {
       id: timestampNum.toString(),
       location: session.chargerName || '',
-      date: new Date(timestampNum * 1000).toLocaleString(),
+      date: new Date(timestampNum).toLocaleString(),
       duration: `${session.minutes ?? ''} min`,
       cost: `${pricePaid / LAMPORTS_PER_SOL} SOL`,
       energy: `${power} Wh`,
     };
   }
+
+  const originalPriceLamports = selectedCharger?.account.price || 0;
+  const discountLamports = 0.1 * LAMPORTS_PER_SOL;
+  const discountedPriceLamports = Math.max(
+    0,
+    originalPriceLamports - discountLamports
+  );
+
+  const originalPriceSOL = originalPriceLamports / LAMPORTS_PER_SOL;
+  const discountedPriceSOL = discountedPriceLamports / LAMPORTS_PER_SOL;
+  const amountInLamports = useToken
+    ? new BN(Math.max(0, selectedCharger?.account.price - discountLamports))
+    : new BN(selectedCharger?.account.price);
 
   return (
     <div className="p-6 lg:p-8">
@@ -326,19 +350,43 @@ const DashBoardPage = () => {
                     <p className="text-2xl font-bold">
                       {/* {{balance ?? "Loading..."} || 0} SOL */}
                       {/* {tokenBalance ?? 'Loading...'} SOL */}
-                      {tokenBalance.toLocaleString(undefined, { maximumFractionDigits: 9 })} APT
+                      {tokenBalance?.toLocaleString(undefined, {
+                        maximumFractionDigits: 9,
+                      })}{' '}
+                      APT
                     </p>
                   </div>
 
                   <div className="p-2 flex flex-col justify-between items-start gap-2">
                     <Label className="text-[10px]">Use the Token Balance</Label>
-                    <Switch className="text-primary bg-white" />
+                    <Switch
+                      className="text-primary bg-white"
+                      checked={useToken}
+                      onCheckedChange={setUseToken}
+                    />
                   </div>
                 </div>
-                <Button size="sm">
-                  <Zap className="mr-2 h-4 w-4" />
-                  Add Tokens
-                </Button>
+
+                <div>
+                  <Button size="sm">
+                    <Zap className="mr-2 h-4 w-4" />
+                    Add Tokens
+                  </Button>
+
+                  <p>
+                    Price: {originalPriceSOL.toFixed(4)} SOL
+                    {useToken && (
+                      <>
+                        {' '}
+                        | With 1 token:{' '}
+                        <strong>
+                          {discountedPriceSOL.toFixed(4)} SOL
+                        </strong>{' '}
+                        (0.1 SOL discount)
+                      </>
+                    )}
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-center justify-between mb-4">
@@ -505,6 +553,8 @@ const DashBoardPage = () => {
                     charger={selectedCharger}
                     onSessionRecorded={handleSessionRecorded}
                     setIsCharging={setIsCharging}
+                    useToken={useToken}
+                    amountInLamports={amountInLamports}
                   />
                 </div>
               ) : (
