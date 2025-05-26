@@ -52,7 +52,7 @@ import {
 } from '@coral-xyz/anchor';
 import idl from '@/idl/ev_charging.json';
 import { getTokenBal } from '@/utils/TokenBal';
-import Image from "next/image";
+import Image from 'next/image';
 import { PublicKey } from '@solana/web3.js';
 
 const getPhantomProvider = (): PhantomProvider | undefined => {
@@ -250,46 +250,45 @@ const DashBoardPage = () => {
   }
 
   // console.log('session is ', session);
-function mapSessionToUI(session) {
-  let timestampNum = 0;
-  if (session.timestamp) {
-    if (typeof session.timestamp.toNumber === 'function') {
-      timestampNum = session.timestamp.toNumber();
-    } else if (typeof session.timestamp === 'number') {
-      timestampNum = session.timestamp;
-    } else {
-      timestampNum = Number(session.timestamp);
+  function mapSessionToUI(session) {
+    let timestampNum = 0;
+    if (session.timestamp) {
+      if (typeof session.timestamp.toNumber === 'function') {
+        timestampNum = session.timestamp.toNumber();
+      } else if (typeof session.timestamp === 'number') {
+        timestampNum = session.timestamp;
+      } else {
+        timestampNum = Number(session.timestamp);
+      }
     }
-  }
-  // Always use .toString() and BigInt for u64 fields
-  const originalPriceLamports = BigInt(session.originalPrice?.toString?.() || session.originalPrice || "0");
-  const usedToken = !!session.usedToken;
-  const power = session.power?.toString?.() || String(session.power || 0);
-  const discountLamports = BigInt(0.1 * LAMPORTS_PER_SOL);
+    // Always use .toString() and BigInt for u64 fields
+    const originalPriceLamports = BigInt(
+      session.originalPrice?.toString?.() || session.originalPrice || '0'
+    );
+    const usedToken = !!session.usedToken;
+    const power = session.power?.toString?.() || String(session.power || 0);
+    const discountLamports = BigInt(0.1 * LAMPORTS_PER_SOL);
 
-  // Calculate discounted price in frontend if token used
-  const discountedPriceLamports = usedToken
-    ? (originalPriceLamports > discountLamports
+    // Calculate discounted price in frontend if token used
+    const discountedPriceLamports = usedToken
+      ? originalPriceLamports > discountLamports
         ? originalPriceLamports - discountLamports
-        : BigInt(0))
-    : originalPriceLamports;
+        : BigInt(0)
+      : originalPriceLamports;
 
-  return {
-    id: timestampNum.toString(),
-    location: session.chargerName || '',
-    date: new Date(timestampNum).toLocaleString(),
-    duration: `${session.minutes ?? ''} min`,
-    cost: `${Number(discountedPriceLamports) / LAMPORTS_PER_SOL} SOL`,
-    originalCost: usedToken
-      ? `${Number(originalPriceLamports) / LAMPORTS_PER_SOL} SOL`
-      : undefined,
-    discounted: usedToken,
-    energy: `${power} Wh`,
-  };
-}
-
-
-
+    return {
+      id: timestampNum.toString(),
+      location: session.chargerName || '',
+      date: new Date(timestampNum).toLocaleString(),
+      duration: `${session.minutes ?? ''} min`,
+      cost: `${Number(discountedPriceLamports) / LAMPORTS_PER_SOL} SOL`,
+      originalCost: usedToken
+        ? `${Number(originalPriceLamports) / LAMPORTS_PER_SOL} SOL`
+        : undefined,
+      discounted: usedToken,
+      energy: `${power} Wh`,
+    };
+  }
 
   const originalPriceLamports = selectedCharger?.account.price || 0;
   const discountLamports = 0.1 * LAMPORTS_PER_SOL;
@@ -319,7 +318,15 @@ function mapSessionToUI(session) {
                 <div className="flex items-center space-x-4">
                   <Avatar className="h-12 w-12">
                     <AvatarImage src={user?.picture} alt={user?.name} />
-                    <AvatarFallback><Image className="backdrop-blur-md inset-2" src={"/avatar.svg"} width={50} height={50} alt={user?.name?.slice(0,2) || "An"} /></AvatarFallback>
+                    <AvatarFallback>
+                      <Image
+                        className="backdrop-blur-md inset-2"
+                        src={'/avatar.svg'}
+                        width={50}
+                        height={50}
+                        alt={user?.name?.slice(0, 2) || 'An'}
+                      />
+                    </AvatarFallback>
                   </Avatar>
                   <div>
                     <CardTitle>{user?.name}</CardTitle>
@@ -426,6 +433,7 @@ function mapSessionToUI(session) {
                 </h3>
                 <div className="space-y-3">
                   {sessions
+                    .filter((s) => s && s.account && s.account.timestamp)
                     .sort(
                       (a, b) =>
                         (b.account.timestamp?.toNumber?.() ??
@@ -456,7 +464,9 @@ function mapSessionToUI(session) {
                             <p className="font-medium">
                               {uiSession.cost}
                               {uiSession.discounted && (
-                                <span className="ml-2 text-xs text-green-600">(discounted)</span>
+                                <span className="ml-2 text-xs text-green-600">
+                                  (discounted)
+                                </span>
                               )}
                             </p>
                             {uiSession.discounted && uiSession.originalCost && (
