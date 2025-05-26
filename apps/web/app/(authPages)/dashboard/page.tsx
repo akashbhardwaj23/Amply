@@ -433,7 +433,15 @@ const DashBoardPage = () => {
                 </h3>
                 <div className="space-y-3">
                   {sessions
-                    .filter((s) => s && s.account && s.account.timestamp)
+                    .filter(
+                      (s) =>
+                        s &&
+                        s.account &&
+                        s.account.timestamp != null &&
+                        s.account.power != null &&
+                        s.account.pricePaid != null &&
+                        s.account.originalPrice != null
+                    )
                     .sort(
                       (a, b) =>
                         (b.account.timestamp?.toNumber?.() ??
