@@ -59,12 +59,12 @@ const getPhantomProvider = (): PhantomProvider | undefined => {
 };
 
 async function createAtaWithRetry(
-  payer,
-  ataAddress,
-  owner,
-  mint,
-  connection,
-  wallet,
+  payer: web3.PublicKey,
+  ataAddress: web3.PublicKey,
+  owner: web3.PublicKey,
+  mint: web3.PublicKey,
+  connection: web3.Connection,
+  wallet: PhantomProvider,
   maxRetries = 1
 ) {
   let attempt = 0;
@@ -142,7 +142,10 @@ export function ChargeButton({
         setProgram(programInstance);
       } catch (err) {
         console.error('Wallet connection failed', err);
-        // toast.error('Failed to connect Phantom wallet');
+        toast({
+          title: 'Wallet Not Connected',
+          variant: 'destructive',
+        });
       }
     };
     init();
@@ -211,6 +214,9 @@ export function ChargeButton({
     setIsCharging(true);
     localStorage.setItem('isCharging', 'true');
 
+    const userPublicKey = phantom.publicKey;
+
+    // Calculate discounted amount in lamports
     const originalPriceLamports = charger.account.price;
 
     // Wrap amount in BN for Anchor
@@ -385,10 +391,10 @@ export function ChargeButton({
         break;
       } catch (err) {
         console.error(`Charge attempt ${attempt} failed`, err);
-
+        setIsCharging(false);
         if (
-          err.message?.includes('already been processed') ||
-          err.transactionMessage?.includes('already been processed')
+          err?.message?.includes('already been processed') ||
+          err?.transactionMessage?.includes('already been processed')
         ) {
           toast({
             variant: 'default',
@@ -403,6 +409,7 @@ export function ChargeButton({
           toast({
             variant: 'destructive',
             title: 'Charge failed',
+            //@ts-ignore
             description: err.message || 'An error occurred during charging.',
           });
           setIsCharging(false);
@@ -438,9 +445,9 @@ export function ChargeButton({
 
   // Release escrow when charging is 90% complete
   const handleReleaseEscrow = async (
-    escrowPDA,
-    chargerPubkey,
-    amountInLamports
+    escrowPDA: web3.PublicKey,
+    chargerPubkey: string,
+    amountInLamports: string
   ) => {
     if (!program || !phantom || !phantom.publicKey) {
       setIsCharging(false);

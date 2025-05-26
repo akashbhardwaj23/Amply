@@ -183,7 +183,7 @@ export default function Navbar() {
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user.picture} />
                     <AvatarFallback>
-                      {user.name?.slice(0, 2) || "Na"}
+                      <img src="/avatar.svg" alt="avatar" />
                     </AvatarFallback>
                   </Avatar>
                 </Button>

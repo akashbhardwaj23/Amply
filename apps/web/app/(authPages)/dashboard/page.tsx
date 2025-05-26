@@ -48,9 +48,11 @@ import {
   setProvider,
   web3,
   BN,
+  Idl,
 } from '@coral-xyz/anchor';
 import idl from '@/idl/ev_charging.json';
 import { getTokenBal } from '@/utils/TokenBal';
+import Image from "next/image";
 import { PublicKey } from '@solana/web3.js';
 
 const getPhantomProvider = (): PhantomProvider | undefined => {
@@ -77,7 +79,7 @@ const DashBoardPage = () => {
   });
   const [tokenBalance, setTokenBalance] = useState(null);
   const { balance } = useBalance();
-  const [program, setProgram] = useState(null);
+  const [program, setProgram] = useState<Program<Idl> | null>(null);
   const [phantom, setPhantom] = useState<PhantomProvider | undefined>();
   const [totals, setTotals] = useState({
     totalEnergy: 0,
@@ -317,7 +319,7 @@ function mapSessionToUI(session) {
                 <div className="flex items-center space-x-4">
                   <Avatar className="h-12 w-12">
                     <AvatarImage src={user?.picture} alt={user?.name} />
-                    <AvatarFallback>{user?.name?.charAt(0)!}</AvatarFallback>
+                    <AvatarFallback><Image className="backdrop-blur-md inset-2" src={"/avatar.svg"} width={50} height={50} alt={user?.name?.slice(0,2) || "An"} /></AvatarFallback>
                   </Avatar>
                   <div>
                     <CardTitle>{user?.name}</CardTitle>
