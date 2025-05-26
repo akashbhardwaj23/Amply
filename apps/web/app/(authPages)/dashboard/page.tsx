@@ -186,7 +186,7 @@ const DashBoardPage = () => {
           },
         },
       ]);
-      console.log('allSessio', allSessions);
+      // console.log('allSessio', allSessions);
       setSessions(allSessions);
     };
 
@@ -207,19 +207,21 @@ const DashBoardPage = () => {
   //   console.log('Token balance:', uiAmount, 'Raw:', rawAmount);
   // }
   // showBalance();
-  useEffect(() => {
-    if (!phantom?.publicKey || !mintAddress) {
-      // Don't call getTokenBal if either is missing!
-      return;
-    }
+  const fetchBalance = async () => {
+    if (!phantom?.publicKey || !mintAddress) return;
+    const result = await getTokenBal(connection, userPublicKey, mintAddress);
+    setTokenBalance(result.uiAmount || 0);
+  };
 
-    async function fetchBalance() {
-      const result = await getTokenBal(connection, userPublicKey, mintAddress);
-      setTokenBalance(result.uiAmount || 0);
-      // console.log('result', result);
-    }
+  useEffect(() => {
     fetchBalance();
   }, [userPublicKey, mintAddress]);
+
+  useEffect(() => {
+    if ((tokenBalance ?? 0) < 1 && useToken) {
+      setUseToken(false);
+    }
+  }, [tokenBalance, useToken]);
 
   // console.log('cData', cData);
   const { user, isLoading } = useUser();
@@ -246,34 +248,46 @@ const DashBoardPage = () => {
   }
 
   // console.log('session is ', session);
-  function mapSessionToUI(session) {
-    if (!session) return {};
-    let timestampNum = 0;
-    if (session.timestamp) {
-      if (typeof session.timestamp.toNumber === 'function') {
-        timestampNum = session.timestamp.toNumber();
-      } else if (typeof session.timestamp === 'number') {
-        timestampNum = session.timestamp;
-      } else {
-        timestampNum = Number(session.timestamp);
-      }
+function mapSessionToUI(session) {
+  let timestampNum = 0;
+  if (session.timestamp) {
+    if (typeof session.timestamp.toNumber === 'function') {
+      timestampNum = session.timestamp.toNumber();
+    } else if (typeof session.timestamp === 'number') {
+      timestampNum = session.timestamp;
+    } else {
+      timestampNum = Number(session.timestamp);
     }
-    const pricePaid = session.pricePaid?.toNumber
-      ? session.pricePaid.toNumber()
-      : Number(session.pricePaid || 0);
-    const power = session.power?.toString
-      ? session.power.toString()
-      : String(session.power || 0);
-
-    return {
-      id: timestampNum.toString(),
-      location: session.chargerName || '',
-      date: new Date(timestampNum).toLocaleString(),
-      duration: `${session.minutes ?? ''} min`,
-      cost: `${pricePaid / LAMPORTS_PER_SOL} SOL`,
-      energy: `${power} Wh`,
-    };
   }
+  // Always use .toString() and BigInt for u64 fields
+  const originalPriceLamports = BigInt(session.originalPrice?.toString?.() || session.originalPrice || "0");
+  const usedToken = !!session.usedToken;
+  const power = session.power?.toString?.() || String(session.power || 0);
+  const discountLamports = BigInt(0.1 * LAMPORTS_PER_SOL);
+
+  // Calculate discounted price in frontend if token used
+  const discountedPriceLamports = usedToken
+    ? (originalPriceLamports > discountLamports
+        ? originalPriceLamports - discountLamports
+        : BigInt(0))
+    : originalPriceLamports;
+
+  return {
+    id: timestampNum.toString(),
+    location: session.chargerName || '',
+    date: new Date(timestampNum).toLocaleString(),
+    duration: `${session.minutes ?? ''} min`,
+    cost: `${Number(discountedPriceLamports) / LAMPORTS_PER_SOL} SOL`,
+    originalCost: usedToken
+      ? `${Number(originalPriceLamports) / LAMPORTS_PER_SOL} SOL`
+      : undefined,
+    discounted: usedToken,
+    energy: `${power} Wh`,
+  };
+}
+
+
+
 
   const originalPriceLamports = selectedCharger?.account.price || 0;
   const discountLamports = 0.1 * LAMPORTS_PER_SOL;
@@ -283,9 +297,7 @@ const DashBoardPage = () => {
 
   const originalPriceSOL = originalPriceLamports / LAMPORTS_PER_SOL;
   const discountedPriceSOL = discountedPriceLamports / LAMPORTS_PER_SOL;
-  const amountInLamports = useToken
-    ? new BN(Math.max(0, selectedCharger?.account.price - discountLamports))
-    : new BN(selectedCharger?.account.price);
+  const amountInLamports = new BN(selectedCharger?.account.price);
 
   return (
     <div className="p-6 lg:p-8">
@@ -416,7 +428,7 @@ const DashBoardPage = () => {
                       (a, b) =>
                         (b.account.timestamp?.toNumber?.() ??
                           Number(b.account.timestamp)) -
-                        (a.account.timestamp?.toNumber?.() ??
+                        (a.account?.timestamp?.toNumber?.() ??
                           Number(a.account.timestamp))
                     )
                     .slice(0, 4)
@@ -438,7 +450,18 @@ const DashBoardPage = () => {
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-medium">{uiSession.cost}</p>
+                            {/* <p className="font-medium">{uiSession.cost}</p> */}
+                            <p className="font-medium">
+                              {uiSession.cost}
+                              {uiSession.discounted && (
+                                <span className="ml-2 text-xs text-green-600">(discounted)</span>
+                              )}
+                            </p>
+                            {uiSession.discounted && uiSession.originalCost && (
+                              <p className="text-xs text-muted-foreground line-through">
+                                {uiSession.originalCost}
+                              </p>
+                            )}
                             <p className="text-sm text-muted-foreground">
                               {uiSession.energy}
                             </p>
@@ -572,7 +595,7 @@ const DashBoardPage = () => {
                     setIsCharging={setIsCharging}
                     useToken={useToken}
                     amountInLamports={amountInLamports}
-                    // fetchBalance={fetchBalance}
+                    fetchBalance={fetchBalance}
                   />
                 </div>
               ) : (

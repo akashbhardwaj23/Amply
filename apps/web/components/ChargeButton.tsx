@@ -58,7 +58,6 @@ const getPhantomProvider = (): PhantomProvider | undefined => {
   return undefined;
 };
 
-
 async function createAtaWithRetry(
   payer,
   ataAddress,
@@ -99,6 +98,7 @@ export function ChargeButton({
   onSessionRecorded,
   useToken,
   amountInLamports,
+  fetchBalance,
 }: {
   isCharging: boolean;
   charger: ChargerType;
@@ -106,13 +106,11 @@ export function ChargeButton({
   onSessionRecorded: any;
   useToken: boolean;
   amountInLamports: number;
+  fetchBalance: Promise<void>;
 }) {
   const [progress, setProgress] = useState(0);
   const [phantom, setPhantom] = useState<PhantomProvider | undefined>();
   const [program, setProgram] = useState<Program | null>(null);
-  const [escrowKeypair, setEscrowKeypair] = useState<web3.Keypair | null>(null);
-
-  const escrowKeypairRef = useRef<web3.Keypair | null>(null);
 
   // console.log('charger ', charger);
 
@@ -200,7 +198,8 @@ export function ChargeButton({
   const MAX_RETRIES = 1;
   const RETRY_DELAY_MS = 2000; // 2 seconds
 
-  const discountLamports = 0.1 * LAMPORTS_PER_SOL; // 0.1 SOL discount
+  // const discountLamports = 0.0000001 * LAMPORTS_PER_SOL; // 0.1 SOL discount
+  // const discountLamports = 0.1 * LAMPORTS_PER_SOL; // 0.1 SOL discount
 
   const handleCharge = async () => {
     if (isCharging) return;
@@ -212,27 +211,10 @@ export function ChargeButton({
     setIsCharging(true);
     localStorage.setItem('isCharging', 'true');
 
-    const userPublicKey = phantom.publicKey;
-
-    // Calculate discounted amount in lamports
     const originalPriceLamports = charger.account.price;
-    const discountedAmountLamports = useToken
-      ? Math.max(0, originalPriceLamports - discountLamports)
-      : originalPriceLamports;
 
     // Wrap amount in BN for Anchor
-    const amountInLamports = new BN(discountedAmountLamports);
-
-    const userSessions = await program.account.chargingSession.all([
-      {
-        memcmp: {
-          offset: 8,
-          bytes: userPublicKey.toBase58(),
-        },
-      },
-    ]);
-
-    // console.log('User sessions:', userSessions);
+    const amountInLamports = new BN(originalPriceLamports);
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
@@ -374,7 +356,9 @@ export function ChargeButton({
             new BN(charger.account.power),
             amountInLamports,
             new BN(1),
-            sessionId
+            sessionId,
+            new BN(charger.account.price),
+            useToken
           )
           .accounts({
             session: sessionPDA,
@@ -492,7 +476,7 @@ export function ChargeButton({
         .rpc();
 
       localStorage.setItem('isCharging', 'false');
-      
+
       toast({
         variant: 'default',
         title: 'Escrow Released',
@@ -500,6 +484,7 @@ export function ChargeButton({
       });
       setIsCharging(false);
       setProgress(100);
+      await fetchBalance();
       setTimeout(() => setProgress(0), 1000);
     } catch (err) {
       console.error('Failed to release escrow', err);
