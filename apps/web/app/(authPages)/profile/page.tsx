@@ -154,7 +154,7 @@ export default function ProfilePage() {
                           <Input
                             id="name"
                             name="name"
-                            value={formData.name}
+                            value={user.name}
                             onChange={handleInputChange}
                             placeholder="Your full name"
                           />
@@ -173,7 +173,7 @@ export default function ProfilePage() {
                             id="email"
                             name="email"
                             type="email"
-                            value={formData.email}
+                            value={user.email}
                             onChange={handleInputChange}
                             placeholder="Your email address"
                           />

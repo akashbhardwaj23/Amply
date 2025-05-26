@@ -9,7 +9,7 @@ export function Loader({
     return <motion.div
     animate={{rotate : 360}}
     transition={{duration : 2 , repeat:Infinity}}
-    className={`rounded-full ${className} border-2 border-gray-300 border-t-2 border-t-black dark:border-white`}>
+    className={`rounded-full ${className} border-2 border-gray-300 border-t-2 border-t-black dark:border-white dark:border-t-black`}>
 
     </motion.div>
 }

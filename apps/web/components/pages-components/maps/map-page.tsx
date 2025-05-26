@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, ChangeEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import { NomanatomData, NomanatomType } from "@/types/nomanatom"
 import { PhantomProvider, Station } from '@/types';
 import { Loader } from "@/components/ui/loader";
 import { toast } from "@/hooks/use-toast";
+import { motion } from "motion/react";
 
 const programId = new web3.PublicKey(idl.address);
 const network = "https://api.devnet.solana.com";
@@ -54,6 +55,20 @@ export default function MapPage() {
   const mapRef = useRef<MapRef | null>(null);
   const mapTabRef = useRef<HTMLButtonElement | null>(null);
   const listTabRef = useRef<HTMLButtonElement | null>(null);
+
+  const handleMapMove = async (longitude: number, latitude: number) => {
+    if (mapRef.current) {
+      const map = mapRef.current;
+
+      map.flyTo({
+        center: [longitude, latitude],
+        zoom: 16,
+        speed: 0.7,
+      });
+    }
+  };
+
+
 
   // --- Fetch stations from Solana on mount ---
   useEffect(() => {
@@ -141,6 +156,15 @@ export default function MapPage() {
     }
   };
 
+
+
+  const handleCitySearch = (e: ChangeEvent<HTMLInputElement>) => {
+    setSearchLocation(e.target.value);
+    setCities([]);
+  };
+
+
+
   // useEffect(() => {
   //   const fetchLoction = async () => {
   //     const response = await fetch(`api/${searchLocation}`, {
@@ -215,10 +239,7 @@ export default function MapPage() {
                       placeholder="Enter city or address"
                       className="pl-9"
                       value={searchLocation}
-                      onChange={(e) => {
-                        setSearchLocation(e.target.value);
-                        setCities([]);
-                      }}
+                      onChange={(e) => handleCitySearch}
                     />
                   </div>
                 </div>
@@ -234,12 +255,13 @@ export default function MapPage() {
 
               {cities && (
                 <div className="absolute top-12 z-50 rounded-b-xl max-w-64 bg-black">
-                  {cities.map((mycity) => (
-                    <div className="border-b p-4 flex flex-col">
+                  {cities.map((mycity, index) => (
+                    <motion.div key={index} layoutId="cityname" className="border-b p-4 flex flex-col" onClick={() =>
+                        handleMapMove(Number(mycity.lon), Number(mycity.lat))} >
                       <span>{mycity.display_name}</span>
                       <span>Long : {mycity.lon}</span>
                       <span>Lat : {mycity.lat}</span>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               )}
@@ -286,6 +308,22 @@ export default function MapPage() {
                   Available stations only
                 </label>
               </div>
+
+              <div className="flex items-center text-xs space-x-2">
+                <div className="flex flex-col items-center justify-center space-x-2">
+                    <MapPin className="text-red-600" />
+                    <span>Selected Map Pin</span>
+                </div>
+                 <div className="flex flex-col items-center justify-center space-x-2">
+                    <MapPin className="text-gray-800" />
+                    <span>Map Charger Position</span>
+                </div>
+                 <div className="flex flex-col items-center justify-center space-x-2">
+                    <MapPin className="text-emerald-700 dark:text-emerald-400" />
+                    <span>Searched Map Pin</span>
+                </div>
+              </div>
+
             </CardContent>
           </Card>
         </div>

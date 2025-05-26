@@ -16,7 +16,6 @@ export default function Home() {
   const [cData, setCData] = useState<ChargerType[]>();
   const [selectedCharger, setSelectedCharger] = useState<ChargerType>();
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const getCharger = async () => {
     setLoading(true);
