@@ -173,13 +173,13 @@ function StationCard({ charger }: { charger: ChargerType }) {
     <Card>
       <CardContent>
         <div className="flex flex-col p-4 gap-4">
-          <div className="flex justify-start items-center gap-2">
+          <div className="flex justify-start items-center gap-4 md:gap-2 w-full">
             <h1 className="text-3xl">{charger.account.name}</h1>
             <span className="px-2 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
               Availabe
             </span>
           </div>
-          <div className="flex justify-between items-center text-sm text-muted-foreground">
+          <div className="flex justify-between items-center w-full text-sm text-muted-foreground">
             <div className="flex items-center">
               {" "}
               <MapPin className="mr-1 h-4 w-4" />
@@ -190,7 +190,7 @@ function StationCard({ charger }: { charger: ChargerType }) {
               <span>•</span>0.3 miles away
             </div>
           </div>
-          <div className="flex justify-between items-center space-x-4 text-lg">
+          <div className="flex justify-between items-center space-x-6 md:space-x-4 text-lg">
             <span className="flex items-center">
               <Zap className="mr-1 h-4 w-4 text-amber-500" />
               {charger.account.power.length} kW

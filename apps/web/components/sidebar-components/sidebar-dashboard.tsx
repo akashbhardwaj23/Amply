@@ -26,6 +26,7 @@ import { SideBarUser } from "@/components/sidebar-components/side-bar-user";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Menu items.
 const items = [
@@ -63,14 +64,16 @@ export default function SidebarComponent({
 }) {
   const pathname = usePathname();
 
+  const isMobile = useIsMobile();
+
   return (
     <Sidebar collapsible="icon">
       <SidebarContent className="text-foreground dark:text-white mt-4">
         <SidebarGroup>
           <SidebarGroupContent>
-            <div className="flex justify-end w-full">
+            {!isMobile && (  <div className="flex justify-end w-full">
               <SidebarTrigger />
-            </div>
+            </div>)}
             <SidebarMenu className="py-4">
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>

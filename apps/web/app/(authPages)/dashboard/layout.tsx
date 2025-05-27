@@ -1,3 +1,4 @@
+import DashboardAppbar from "@/components/dashboard-header";
 import { ModeToggle } from "@/components/mode-toggle";
 import SidebarComponent from "@/components/sidebar-components/sidebar-dashboard";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -29,16 +30,7 @@ export default async function DashboardLayout({
       >
         <SidebarComponent user={user} />
         <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b px-4">
-            <div className="flex h-16 shrink-0 items-center gap-2 text-foreground">
-              <Separator className="mr-2 h-4" />
-              <Link href="/" className="flex items-center space-x-2">
-                <span className="text-xl font-bold tracking-tight">Amply</span>
-              </Link>
-            </div>
-
-            <ModeToggle />
-          </header>
+          <DashboardAppbar />
           <div className="h-full">{children}</div>
         </SidebarInset>
       </SidebarProvider>

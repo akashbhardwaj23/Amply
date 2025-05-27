@@ -100,7 +100,7 @@ export default function Navbar() {
               <NavigationMenuItem>
                 <NavigationMenuTrigger>Features</NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                  <ul className="grid w-[300px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
                     <li className="row-span-3">
                       <NavigationMenuLink asChild>
                         <a
@@ -173,7 +173,7 @@ export default function Navbar() {
           </Button>
 
           {user && (<div className="flex">
-            {isMobile ? (<WalletMultiButton style={{ backgroundColor: "#d32454", width:"80px", fontSize: 8, display: "flex", justifyContent: "center", textWrap:"nowrap"}} />) : (<WalletMultiButton style={{ backgroundColor: "#d32454" }} />)}
+            {isMobile ? (<WalletMultiButton style={{ backgroundColor: "#d32454", width:"70px", fontSize: 8, marginLeft:2, display: "flex", justifyContent: "center", textWrap:"nowrap"}} />) : (<WalletMultiButton style={{ backgroundColor: "#d32454" }} />)}
             </div>
             )}
 

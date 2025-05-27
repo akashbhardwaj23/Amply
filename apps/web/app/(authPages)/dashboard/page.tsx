@@ -328,7 +328,7 @@ const DashBoardPage = () => {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <Avatar className="h-12 w-12">
+                  <Avatar className="h-8 w-8 md:h-12 md:w-12">
                     <AvatarImage src={user?.picture} alt={user?.name} />
                     <AvatarFallback>
                       <Image
@@ -347,7 +347,7 @@ const DashBoardPage = () => {
                 </div>
 
                 <Dialog>
-                  <DialogTrigger className="border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3">
+                  <DialogTrigger className="border border-input bg-background text-sm hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3">
                     Edit Profile
                   </DialogTrigger>
                   <DialogContent>
@@ -379,7 +379,7 @@ const DashBoardPage = () => {
                   </div>
                   <div>
                     <p className="text-sm font-medium">Token Balance</p>
-                    <p className="text-2xl font-bold">
+                    <p className="text-lg md:text-2xl font-bold">
                       {/* {{balance ?? "Loading..."} || 0} SOL */}
                       {/* {tokenBalance ?? 'Loading...'} SOL */}
                       {tokenBalance?.toLocaleString(undefined, {
@@ -400,7 +400,7 @@ const DashBoardPage = () => {
                   </div>
                 </div>
 
-                <div>
+                <div className='hidden md:flex'>
                   <Button
                     size="sm"
                     onClick={() => toast({
