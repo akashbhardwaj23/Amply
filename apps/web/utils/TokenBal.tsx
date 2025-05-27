@@ -1,5 +1,6 @@
-import { PublicKey } from '@solana/web3.js';
+import { Connection, PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
+import { web3 } from '@coral-xyz/anchor';
 
 /**
  * Fetches the SPL token balance for a user.
@@ -8,7 +9,9 @@ import { getAssociatedTokenAddress } from '@solana/spl-token';
  * @param {string|PublicKey} mintAddress - The token mint address.
  * @returns {Promise<{ uiAmount: number|null, rawAmount: string }>}
  */
-export async function getTokenBal(connection, userPublicKey, mintAddress) {
+export async function getTokenBal(connection : Connection, userPublicKey : {
+    toBase58: () => string;
+} | undefined, mintAddress : web3.PublicKey) {
   if (!userPublicKey ) {
     throw new Error('userPublicKey are required');
   }

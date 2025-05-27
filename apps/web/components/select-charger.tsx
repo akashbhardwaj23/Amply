@@ -9,11 +9,11 @@ import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 export default function SelectChargeButton({
   charger,
   isCharging,
-  setSelectedCharger,
+  handleSelectedCharger
 }: {
   charger: ChargerType;
   isCharging: boolean;
-  setSelectedCharger: Dispatch<SetStateAction<ChargerType | undefined>>;
+  handleSelectedCharger: (charger : ChargerType) => void;
 }) {
   return (
     <Card className="mb-2">
@@ -38,7 +38,7 @@ export default function SelectChargeButton({
           </div>
         </div>
         <Button
-          onClick={() => setSelectedCharger(charger)}
+          onClick={() => handleSelectedCharger(charger)}
           variant="default"
           className="px-8"
           disabled={isCharging}

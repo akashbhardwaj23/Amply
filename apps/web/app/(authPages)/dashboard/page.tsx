@@ -27,7 +27,7 @@ import {
 import { useUser } from '@civic/auth-web3/react';
 import { fetchChargerData } from '@/app/server/charger';
 import { Loader } from '@/components/ui/loader';
-import { ChargerType, PhantomProvider } from '@/types';
+import { ChargerType, PhantomProvider, ProgramType } from '@/types';
 import SelectChargeButton from '@/components/select-charger';
 import {
   Dialog,
@@ -54,15 +54,20 @@ import idl from '@/idl/ev_charging.json';
 import { getTokenBal } from '@/utils/TokenBal';
 import Image from "next/image";
 import { PublicKey } from '@solana/web3.js';
+import { getPhantomProvider } from '@/utils/utils';
+import { toast } from '@/components/ui/use-toast';
+import { cn } from '@/lib/utils';
 
-const getPhantomProvider = (): PhantomProvider | undefined => {
-  if (typeof window !== 'undefined' && 'solana' in window) {
-    const provider = (window as any).solana as PhantomProvider;
-    if (provider.isPhantom) return provider;
-  }
-  window.open('https://phantom.app/', '_blank');
-  return undefined;
-};
+// Not Needed
+// const getPhantomProvider = (): PhantomProvider | undefined => {
+//   if (typeof window !== 'undefined' && 'solana' in window) {
+//     const provider = (window as any).solana as PhantomProvider;
+//     if (provider.isPhantom) return provider;
+//   }
+//   window.open('https://phantom.app/', '_blank');
+//   return undefined;
+// };
+
 const mintAddress = new web3.PublicKey(
   'HYbi3JvAQNDawVmndhqaDQfBaZYzW8FxsAEpTae3mzrm'
 );
@@ -77,10 +82,10 @@ const DashBoardPage = () => {
   const [isCharging, setIsCharging] = useState(() => {
     return localStorage.getItem('isCharging') === 'true';
   });
-  const [tokenBalance, setTokenBalance] = useState(null);
+  const [tokenBalance, setTokenBalance] = useState<number>(0);
   const { balance } = useBalance();
   const [program, setProgram] = useState<Program<Idl> | null>(null);
-  const [phantom, setPhantom] = useState<PhantomProvider | undefined>();
+  const [phantom, setPhantom] = useState<PhantomProvider>();
   const [totals, setTotals] = useState({
     totalEnergy: 0,
     totalSpent: 0,
@@ -95,6 +100,7 @@ const DashBoardPage = () => {
     let totalEnergy = 0;
     let totalSpent = 0;
 
+    console.log("session is ", sessions)
     sessions.forEach(({ account }) => {
       totalEnergy += account.power.toNumber(); // e.g., in kWh
       totalSpent += account.pricePaid.toNumber() / 1e9; // if solSpent is in lamports, convert to SOL
@@ -150,6 +156,7 @@ const DashBoardPage = () => {
         // toast.error('Phantom wallet not found, please install it.');
         return;
       }
+      //@ts-ignore
       setPhantom(phantomProvider);
 
       try {
@@ -167,6 +174,7 @@ const DashBoardPage = () => {
 
         setProvider(anchorProvider); // sets global provider for Anchor
         const programInstance = new Program(idl, anchorProvider);
+        console.log("program Instance ", programInstance)
         setProgram(programInstance);
       } catch (err) {
         console.error('Wallet connection failed', err);
@@ -180,7 +188,9 @@ const DashBoardPage = () => {
     const fetchSessions = async () => {
       if (!program || !phantom?.publicKey) return;
       // Fetch all sessions for this wallet
-      const allSessions = await program.account.chargingSession.all([
+
+      //@ts-ignore
+      const allSessions = await program.account?.chargingSession.all([
         {
           memcmp: {
             offset: 8, // user is first field after discriminator
@@ -247,8 +257,8 @@ const DashBoardPage = () => {
     );
   }
 
-  // console.log('session is ', session);
-  function mapSessionToUI(session) {
+  console.log('session is ', sessions);
+  function mapSessionToUI(session : any) {
     if (!session) return {};
     let timestampNum = 0;
     if (session.timestamp) {
@@ -280,14 +290,14 @@ const DashBoardPage = () => {
   const originalPriceLamports = selectedCharger?.account.price || 0;
   const discountLamports = 0.1 * LAMPORTS_PER_SOL;
   const discountedPriceLamports = useToken
-    ? Math.max(0, originalPriceLamports - discountLamports)
+    ? Math.max(0, Number(originalPriceLamports) - discountLamports)
     : originalPriceLamports;
 
-  const originalPriceSOL = originalPriceLamports / LAMPORTS_PER_SOL;
-  const discountedPriceSOL = discountedPriceLamports / LAMPORTS_PER_SOL;
+  const originalPriceSOL = Number(originalPriceLamports) / LAMPORTS_PER_SOL;
+  const discountedPriceSOL = Number(discountedPriceLamports) / LAMPORTS_PER_SOL;
   const amountInLamports = useToken
-    ? new BN(Math.max(0, selectedCharger?.account.price - discountLamports))
-    : new BN(selectedCharger?.account.price);
+    ? new BN(Math.max(0, Number(selectedCharger?.account.price) - discountLamports))
+    : new BN(Number(selectedCharger?.account.price));
 
   return (
     <div className="p-6 lg:p-8">
@@ -364,7 +374,7 @@ const DashBoardPage = () => {
                       className="text-primary bg-white"
                       checked={useToken}
                       onCheckedChange={setUseToken}
-                      disabled={(tokenBalance ?? 0) < 1 || isCharging}
+                      disabled={(tokenBalance) < 1 || isCharging}
                     />
                   </div>
                 </div>
@@ -372,7 +382,13 @@ const DashBoardPage = () => {
                 <div>
                   <Button
                     size="sm"
-                    onClick={() => alert('Still in development!')}
+                    onClick={() => toast({
+                      title : "Development",
+                      description : "Still In Development",
+                      className: cn(
+                                'top-0 left-[40%] flex fixed md:max-w-[420px] md:top-4 md:right-4'
+                              )
+                    })}
                   >
                     <Zap className="mr-2 h-4 w-4" />
                     Add Tokens
@@ -511,7 +527,7 @@ const DashBoardPage = () => {
                     <MapPin className="mr-1 h-4 w-4" />
                     <span>{selectedCharger.account.address}</span>
                     <span className="mx-2">•</span>
-                    <span>{cData.distance || 0.3}</span>
+                    <span>{cData?.distance || 0.3}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-3 mb-4">
                     <div>
@@ -526,7 +542,7 @@ const DashBoardPage = () => {
                       <p className="text-xs text-muted-foreground">Price</p>
                       <p className="font-medium">
                         {(
-                          discountedPriceLamports / LAMPORTS_PER_SOL
+                          Number(discountedPriceLamports) / LAMPORTS_PER_SOL
                         ).toLocaleString(undefined, {
                           maximumFractionDigits: 4,
                         })}{' '}
@@ -540,7 +556,7 @@ const DashBoardPage = () => {
                       {useToken && (
                         <p className="text-xs text-muted-foreground line-through">
                           {(
-                            originalPriceLamports / LAMPORTS_PER_SOL
+                            Number(originalPriceLamports) / LAMPORTS_PER_SOL
                           ).toLocaleString(undefined, {
                             maximumFractionDigits: 4,
                           })}{' '}
@@ -573,7 +589,7 @@ const DashBoardPage = () => {
                     onSessionRecorded={handleSessionRecorded}
                     setIsCharging={setIsCharging}
                     useToken={useToken}
-                    amountInLamports={amountInLamports}
+                    amountInLamports={amountInLamports.toNumber()}
                     // fetchBalance={fetchBalance}
                   />
                 </div>
@@ -593,7 +609,7 @@ const DashBoardPage = () => {
                         key={idx}
                         charger={charger}
                         isCharging={isCharging}
-                        setSelectedCharger={handleSelectCharger}
+                        handleSelectedCharger={handleSelectCharger}
                       />
                     ) : (
                       idx < 4 && (
@@ -601,7 +617,7 @@ const DashBoardPage = () => {
                           key={idx}
                           charger={charger}
                           isCharging={isCharging}
-                          setSelectedCharger={handleSelectCharger}
+                          handleSelectedCharger={handleSelectCharger}
                         />
                       )
                     )

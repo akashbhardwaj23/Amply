@@ -33,9 +33,11 @@ import { useLoading } from "@/hooks/useLoading";
 import { ChargerType } from "@/types";
 import { fetchChargerData } from "@/app/server/charger";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Navbar() {
   const pathname = usePathname();
+  const isMobile = useIsMobile()
   const [voiceCommandOpen, setVoiceCommandOpen] = useState(false);
   const router = useRouter();
   const { loading, setLoading } = useLoading();
@@ -79,11 +81,11 @@ export default function Navbar() {
               alt="EV Charging Station"
               className="w-8 h-8 object-cover"
             />
-            <span className="text-xl font-bold tracking-tight">Amply</span>
+            <span className="text-xl font-bold tracking-tight hidden md:block">Amply</span>
           </Link>
           <NavigationMenu>
             <NavigationMenuList>
-              <NavigationMenuItem>
+              <NavigationMenuItem className="hidden md:block">
                 <Link href="/map" legacyBehavior passHref>
                   <NavigationMenuLink
                     className={cn(
@@ -162,6 +164,7 @@ export default function Navbar() {
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
+            className="hidden md:block"
             size="icon"
             onClick={() => setVoiceCommandOpen(true)}
             aria-label="Voice commands"
@@ -169,7 +172,10 @@ export default function Navbar() {
             <Mic className="h-5 w-5" />
           </Button>
 
-          {user && (<WalletMultiButton style={{ backgroundColor: "#d32454" }} />)}
+          {user && (<div className="flex">
+            {isMobile ? (<WalletMultiButton style={{ backgroundColor: "#d32454", width:"80px", fontSize: 8, display: "flex", justifyContent: "center", textWrap:"nowrap"}} />) : (<WalletMultiButton style={{ backgroundColor: "#d32454" }} />)}
+            </div>
+            )}
 
           <ModeToggle />
 

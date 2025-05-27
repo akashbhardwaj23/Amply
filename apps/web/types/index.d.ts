@@ -1,3 +1,4 @@
+import { AccountClient } from '@coral-xyz/anchor';
 import React from 'react';
 
 type PhantomProvider = {
@@ -54,4 +55,12 @@ export interface Account {
   connectorTypes: string;
   latitude:       number;
   longitude:      number;
+}
+
+
+export interface ProgramType {
+  charger : AccountClient;
+  chargingSession : AccountClient;
+  escrow : AccountClient;
+  user : AccountClient
 }

@@ -29,6 +29,7 @@ import { ChargerType } from "@/types";
 import { Label } from "./ui/label";
 import { toast } from "./ui/use-toast";
 import { getTokenBal } from "@/utils/TokenBal";
+import { getPhantomProvider } from "@/utils/utils";
 
 interface PhantomProvider {
   isPhantom?: boolean;
@@ -49,14 +50,17 @@ const REWARD_MINT = new web3.PublicKey(
   "HYbi3JvAQNDawVmndhqaDQfBaZYzW8FxsAEpTae3mzrm"
 );
 
-const getPhantomProvider = (): PhantomProvider | undefined => {
-  if (typeof window !== "undefined" && "solana" in window) {
-    const provider = (window as any).solana as PhantomProvider;
-    if (provider.isPhantom) return provider;
-  }
-  window.open("https://phantom.app/", "_blank");
-  return undefined;
-};
+// No Need for this functions
+
+
+// const getPhantomProvider = (): PhantomProvider | undefined => {
+//   if (typeof window !== "undefined" && "solana" in window) {
+//     const provider = (window as any).solana as PhantomProvider;
+//     if (provider.isPhantom) return provider;
+//   }
+//   window.open("https://phantom.app/", "_blank");
+//   return undefined;
+// };
 
 async function createAtaWithRetry(
   payer: web3.PublicKey,
@@ -212,7 +216,7 @@ export function ChargeButton({
     }
 
     setIsCharging(true);
-    localStorage.setItem("isCharging", "true");
+    // localStorage.setItem("isCharging", "true");
 
     const userPublicKey = phantom.publicKey;
 
@@ -387,6 +391,9 @@ export function ChargeButton({
           })
           .rpc();
 
+
+          console.log("prgram accounts ", program.account)
+
         const sessionAccount =
           await program.account.chargingSession.fetchNullable(sessionPDA);
         if (onSessionRecorded) {
@@ -458,7 +465,6 @@ export function ChargeButton({
   // Release escrow when charging is 90% complete
   const handleReleaseEscrow = async (
     escrowPDA : web3.PublicKey,
-    chargerPubkey : string,
     amountInLamports : string
   ) => {
     if (!program || !phantom || !phantom.publicKey) {
