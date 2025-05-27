@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useRef, Dispatch, SetStateAction } from "react";
+import { useEffect, useState, useRef, Dispatch, SetStateAction } from 'react';
 import {
   web3,
   BN,
@@ -8,18 +8,18 @@ import {
   AnchorProvider,
   setProvider,
   getProvider,
-} from "@coral-xyz/anchor";
+} from '@coral-xyz/anchor';
 import {
   getAssociatedTokenAddress,
   createAssociatedTokenAccountInstruction,
-} from "@solana/spl-token";
+} from '@solana/spl-token';
 import {
   PublicKey,
   Connection,
   clusterApiUrl,
   Keypair,
   LAMPORTS_PER_SOL,
-} from "@solana/web3.js";
+} from '@solana/web3.js';
 // import { toast } from '@/components/ui/use-toast';
 import { Button } from "@/components/ui/button";
 import { PlugZap, Zap } from "lucide-react";
@@ -41,13 +41,13 @@ interface PhantomProvider {
 }
 
 const PROGRAM_ID = new web3.PublicKey(idl.address);
-const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
+const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
 const SYSTEM_PROGRAM_ID = web3.SystemProgram.programId;
 const TOKEN_PROGRAM_ID = new web3.PublicKey(
-  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+  'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'
 );
 const REWARD_MINT = new web3.PublicKey(
-  "HYbi3JvAQNDawVmndhqaDQfBaZYzW8FxsAEpTae3mzrm"
+  'HYbi3JvAQNDawVmndhqaDQfBaZYzW8FxsAEpTae3mzrm'
 );
 
 // No Need for this functions
@@ -77,14 +77,14 @@ async function createAtaWithRetry(
       const tx = new web3.Transaction().add(
         createAssociatedTokenAccountInstruction(payer, ataAddress, owner, mint)
       );
-      const latestBlockhash = await connection.getLatestBlockhash("confirmed");
+      const latestBlockhash = await connection.getLatestBlockhash('confirmed');
       tx.recentBlockhash = latestBlockhash.blockhash;
       tx.feePayer = payer;
       const signedTx = await wallet.signTransaction(tx);
       const signature = await connection.sendRawTransaction(
         signedTx.serialize()
       );
-      await connection.confirmTransaction(signature, "confirmed");
+      await connection.confirmTransaction(signature, 'confirmed');
       return signature;
     } catch (err) {
       attempt++;
@@ -102,6 +102,7 @@ export function ChargeButton({
   onSessionRecorded,
   useToken,
   amountInLamports,
+  fetchBalance,
 }: {
   isCharging: boolean;
   charger: ChargerType;
@@ -109,13 +110,11 @@ export function ChargeButton({
   onSessionRecorded: any;
   useToken: boolean;
   amountInLamports: number;
+  fetchBalance: Promise<void>;
 }) {
   const [progress, setProgress] = useState(0);
   const [phantom, setPhantom] = useState<PhantomProvider | undefined>();
   const [program, setProgram] = useState<Program | null>(null);
-  const [escrowKeypair, setEscrowKeypair] = useState<web3.Keypair | null>(null);
-
-  const escrowKeypairRef = useRef<web3.Keypair | null>(null);
 
   // console.log('charger ', charger);
 
@@ -133,8 +132,8 @@ export function ChargeButton({
         await phantomProvider.connect();
 
         const connection = new web3.Connection(
-          "https://api.devnet.solana.com",
-          "confirmed"
+          'https://api.devnet.solana.com',
+          'confirmed'
         );
         const anchorProvider = new AnchorProvider(
           connection,
@@ -146,10 +145,10 @@ export function ChargeButton({
         const programInstance = new Program(idl, anchorProvider);
         setProgram(programInstance);
       } catch (err) {
-        console.error("Wallet connection failed", err);
+        console.error('Wallet connection failed', err);
         toast({
-          title: "Wallet Not Connected",
-          variant: "destructive",
+          title: 'Wallet Not Connected',
+          variant: 'destructive',
         });
       }
     };
@@ -158,11 +157,11 @@ export function ChargeButton({
 
   useEffect(() => {
     if (isCharging) {
-      const chargingStart = Number(localStorage.getItem("chargingStart"));
-      const chargingDuration = Number(localStorage.getItem("chargingDuration"));
-      const escrowPDAString = localStorage.getItem("escrowPDA");
-      const chargerPubkeyString = localStorage.getItem("chargerPubkey");
-      const amountInLamportsString = localStorage.getItem("amountInLamports");
+      const chargingStart = Number(localStorage.getItem('chargingStart'));
+      const chargingDuration = Number(localStorage.getItem('chargingDuration'));
+      const escrowPDAString = localStorage.getItem('escrowPDA');
+      const chargerPubkeyString = localStorage.getItem('chargerPubkey');
+      const amountInLamportsString = localStorage.getItem('amountInLamports');
 
       if (
         !chargingStart ||
@@ -194,11 +193,11 @@ export function ChargeButton({
       return () => clearInterval(interval);
     } else {
       setProgress(0);
-      localStorage.removeItem("chargingStart");
-      localStorage.removeItem("chargingDuration");
-      localStorage.removeItem("escrowPDA");
-      localStorage.removeItem("chargerPubkey");
-      localStorage.removeItem("amountInLamports");
+      localStorage.removeItem('chargingStart');
+      localStorage.removeItem('chargingDuration');
+      localStorage.removeItem('escrowPDA');
+      localStorage.removeItem('chargerPubkey');
+      localStorage.removeItem('amountInLamports');
     }
   }, [isCharging]);
 
@@ -206,45 +205,32 @@ export function ChargeButton({
   const MAX_RETRIES = 1;
   const RETRY_DELAY_MS = 2000; // 2 seconds
 
-  const discountLamports = 0.1 * LAMPORTS_PER_SOL; // 0.1 SOL discount
+  // const discountLamports = 0.0000001 * LAMPORTS_PER_SOL; // 0.1 SOL discount
+  // const discountLamports = 0.1 * LAMPORTS_PER_SOL; // 0.1 SOL discount
 
   const handleCharge = async () => {
     if (isCharging) return;
     if (!program || !phantom || !phantom.publicKey) {
-      console.error("Wallet not connected");
+      console.error('Wallet not connected');
       return;
     }
 
     setIsCharging(true);
-    // localStorage.setItem("isCharging", "true");
+    localStorage.setItem('isCharging', 'true');
 
     const userPublicKey = phantom.publicKey;
 
     // Calculate discounted amount in lamports
     const originalPriceLamports = charger.account.price;
-    const discountedAmountLamports = useToken
-      ? Math.max(0, originalPriceLamports - discountLamports)
-      : originalPriceLamports;
 
     // Wrap amount in BN for Anchor
-    const amountInLamports = new BN(discountedAmountLamports);
-
-    const userSessions = await program.account.chargingSession.all([
-      {
-        memcmp: {
-          offset: 8,
-          bytes: userPublicKey.toBase58(),
-        },
-      },
-    ]);
-
-    // console.log('User sessions:', userSessions);
+    const amountInLamports = new BN(originalPriceLamports);
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
         // 1. Derive user PDA
         const [userPDA] = await web3.PublicKey.findProgramAddress(
-          [Buffer.from("user"), phantom.publicKey.toBuffer()],
+          [Buffer.from('user'), phantom.publicKey.toBuffer()],
           program.programId
         );
 
@@ -313,18 +299,18 @@ export function ChargeButton({
         // 7. Derive mint authority PDA and bump
         const [mintAuthorityPda, mintAuthorityBump] =
           await web3.PublicKey.findProgramAddress(
-            [Buffer.from("mint-authority")],
+            [Buffer.from('mint-authority')],
             program.programId
           );
 
         // 8. Generate sessionId once as BN
         const sessionId = new BN(Date.now());
-        const sessionIdLeBuffer = sessionId.toArrayLike(Buffer, "le", 8);
+        const sessionIdLeBuffer = sessionId.toArrayLike(Buffer, 'le', 8);
 
         // 9. Derive escrow PDA
         const [escrowPDA] = await web3.PublicKey.findProgramAddress(
           [
-            Buffer.from("escrow"),
+            Buffer.from('escrow'),
             phantom.publicKey.toBuffer(),
             chargerPubkey.toBuffer(),
             sessionIdLeBuffer,
@@ -336,9 +322,9 @@ export function ChargeButton({
         const escrowAccount = await connection.getAccountInfo(escrowPDA);
         if (escrowAccount) {
           toast({
-            variant: "default",
-            title: "Already charged escrow",
-            description: "This charge has already been processed.",
+            variant: 'default',
+            title: 'Already charged escrow',
+            description: 'This charge has already been processed.',
           });
           setIsCharging(false);
           return;
@@ -366,7 +352,7 @@ export function ChargeButton({
         // 12. Derive session PDA
         const [sessionPDA] = await web3.PublicKey.findProgramAddress(
           [
-            Buffer.from("session"),
+            Buffer.from('session'),
             phantom.publicKey.toBuffer(),
             sessionIdLeBuffer,
           ],
@@ -380,7 +366,9 @@ export function ChargeButton({
             new BN(charger.account.power),
             amountInLamports,
             new BN(1),
-            sessionId
+            sessionId,
+            new BN(charger.account.price),
+            useToken
           )
           .accounts({
             session: sessionPDA,
@@ -410,15 +398,15 @@ export function ChargeButton({
         break;
       } catch (err) {
         console.error(`Charge attempt ${attempt} failed`, err);
-        setIsCharging(false)
+        setIsCharging(false);
         if (
-          err?.message?.includes("already been processed") ||
-          err?.transactionMessage?.includes("already been processed")
+          err?.message?.includes('already been processed') ||
+          err?.transactionMessage?.includes('already been processed')
         ) {
           toast({
-            variant: "default",
-            title: "Transaction already processed",
-            description: "This transaction was already confirmed on-chain.",
+            variant: 'default',
+            title: 'Transaction already processed',
+            description: 'This transaction was already confirmed on-chain.',
           });
           setIsCharging(false);
           break;
@@ -426,10 +414,10 @@ export function ChargeButton({
 
         if (attempt === MAX_RETRIES) {
           toast({
-            variant: "destructive",
-            title: "Charge failed",
+            variant: 'destructive',
+            title: 'Charge failed',
             //@ts-ignore
-            description: err.message || "An error occurred during charging.",
+            description: err.message || 'An error occurred during charging.',
           });
           setIsCharging(false);
           return;
@@ -445,8 +433,8 @@ export function ChargeButton({
     setProgress(0);
     const totalDuration = 1 * 60 * 1000;
     const chargingStart = Date.now();
-    localStorage.setItem("chargingStart", chargingStart.toString());
-    localStorage.setItem("chargingDuration", totalDuration.toString());
+    localStorage.setItem('chargingStart', chargingStart.toString());
+    localStorage.setItem('chargingDuration', totalDuration.toString());
     const interval = 1000;
     let elapsed = 0;
 
@@ -475,7 +463,7 @@ export function ChargeButton({
     try {
       // Derive user PDA again
       const [userPDA] = await web3.PublicKey.findProgramAddress(
-        [Buffer.from("user"), phantom.publicKey.toBuffer()],
+        [Buffer.from('user'), phantom.publicKey.toBuffer()],
         program.programId
       );
 
@@ -500,22 +488,23 @@ export function ChargeButton({
         })
         .rpc();
 
-      localStorage.setItem("isCharging", "false");
+      localStorage.setItem('isCharging', 'false');
 
       toast({
-        variant: "default",
-        title: "Escrow Released",
-        description: "Escrow Released Successfully",
+        variant: 'default',
+        title: 'Escrow Released',
+        description: 'Escrow Released Successfully',
       });
       setIsCharging(false);
       setProgress(100);
+      await fetchBalance();
       setTimeout(() => setProgress(0), 1000);
     } catch (err) {
-      console.error("Failed to release escrow", err);
+      console.error('Failed to release escrow', err);
       toast({
-        variant: "destructive",
-        title: "Transfer Failed",
-        description: "Failed To release Escrow",
+        variant: 'destructive',
+        title: 'Transfer Failed',
+        description: 'Failed To release Escrow',
       });
       setIsCharging(false);
     }
@@ -530,7 +519,7 @@ export function ChargeButton({
         disabled={isCharging}
       >
         <Zap className="mr-2 h-4 w-full" />
-        <span>{isCharging ? "Charging..." : "Start Charging"}</span>
+        <span>{isCharging ? 'Charging...' : 'Start Charging'}</span>
       </Button>
 
       {isCharging && (

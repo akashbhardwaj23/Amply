@@ -52,7 +52,7 @@ import {
 } from '@coral-xyz/anchor';
 import idl from '@/idl/ev_charging.json';
 import { getTokenBal } from '@/utils/TokenBal';
-import Image from "next/image";
+import Image from 'next/image';
 import { PublicKey } from '@solana/web3.js';
 import { getPhantomProvider } from '@/utils/utils';
 import { toast } from '@/components/ui/use-toast';
@@ -198,7 +198,7 @@ const DashBoardPage = () => {
           },
         },
       ]);
-      console.log('allSessio', allSessions);
+      // console.log('allSessio', allSessions);
       setSessions(allSessions);
     };
 
@@ -219,19 +219,21 @@ const DashBoardPage = () => {
   //   console.log('Token balance:', uiAmount, 'Raw:', rawAmount);
   // }
   // showBalance();
-  useEffect(() => {
-    if (!phantom?.publicKey || !mintAddress) {
-      // Don't call getTokenBal if either is missing!
-      return;
-    }
+  const fetchBalance = async () => {
+    if (!phantom?.publicKey || !mintAddress) return;
+    const result = await getTokenBal(connection, userPublicKey, mintAddress);
+    setTokenBalance(result.uiAmount || 0);
+  };
 
-    async function fetchBalance() {
-      const result = await getTokenBal(connection, userPublicKey, mintAddress);
-      setTokenBalance(result.uiAmount || 0);
-      // console.log('result', result);
-    }
+  useEffect(() => {
     fetchBalance();
   }, [userPublicKey, mintAddress]);
+
+  useEffect(() => {
+    if ((tokenBalance ?? 0) < 1 && useToken) {
+      setUseToken(false);
+    }
+  }, [tokenBalance, useToken]);
 
   // console.log('cData', cData);
   const { user, isLoading } = useUser();
@@ -257,9 +259,8 @@ const DashBoardPage = () => {
     );
   }
 
-  console.log('session is ', sessions);
-  function mapSessionToUI(session : any) {
-    if (!session) return {};
+  // console.log('session is ', session);
+  function mapSessionToUI(session) {
     let timestampNum = 0;
     if (session.timestamp) {
       if (typeof session.timestamp.toNumber === 'function') {
@@ -270,19 +271,31 @@ const DashBoardPage = () => {
         timestampNum = Number(session.timestamp);
       }
     }
-    const pricePaid = session.pricePaid?.toNumber
-      ? session.pricePaid.toNumber()
-      : Number(session.pricePaid || 0);
-    const power = session.power?.toString
-      ? session.power.toString()
-      : String(session.power || 0);
+    // Always use .toString() and BigInt for u64 fields
+    const originalPriceLamports = BigInt(
+      session.originalPrice?.toString?.() || session.originalPrice || '0'
+    );
+    const usedToken = !!session.usedToken;
+    const power = session.power?.toString?.() || String(session.power || 0);
+    const discountLamports = BigInt(0.1 * LAMPORTS_PER_SOL);
+
+    // Calculate discounted price in frontend if token used
+    const discountedPriceLamports = usedToken
+      ? originalPriceLamports > discountLamports
+        ? originalPriceLamports - discountLamports
+        : BigInt(0)
+      : originalPriceLamports;
 
     return {
       id: timestampNum.toString(),
       location: session.chargerName || '',
       date: new Date(timestampNum).toLocaleString(),
       duration: `${session.minutes ?? ''} min`,
-      cost: `${pricePaid / LAMPORTS_PER_SOL} SOL`,
+      cost: `${Number(discountedPriceLamports) / LAMPORTS_PER_SOL} SOL`,
+      originalCost: usedToken
+        ? `${Number(originalPriceLamports) / LAMPORTS_PER_SOL} SOL`
+        : undefined,
+      discounted: usedToken,
       energy: `${power} Wh`,
     };
   }
@@ -317,7 +330,15 @@ const DashBoardPage = () => {
                 <div className="flex items-center space-x-4">
                   <Avatar className="h-12 w-12">
                     <AvatarImage src={user?.picture} alt={user?.name} />
-                    <AvatarFallback><Image className="backdrop-blur-md inset-2" src={"/avatar.svg"} width={50} height={50} alt={user?.name?.slice(0,2) || "An"} /></AvatarFallback>
+                    <AvatarFallback>
+                      <Image
+                        className="backdrop-blur-md inset-2"
+                        src={'/avatar.svg'}
+                        width={50}
+                        height={50}
+                        alt={user?.name?.slice(0, 2) || 'An'}
+                      />
+                    </AvatarFallback>
                   </Avatar>
                   <div>
                     <CardTitle>{user?.name}</CardTitle>
@@ -430,11 +451,20 @@ const DashBoardPage = () => {
                 </h3>
                 <div className="space-y-3">
                   {sessions
+                    .filter(
+                      (s) =>
+                        s &&
+                        s.account &&
+                        s.account.timestamp != null &&
+                        s.account.power != null &&
+                        s.account.pricePaid != null &&
+                        s.account.originalPrice != null
+                    )
                     .sort(
                       (a, b) =>
                         (b.account.timestamp?.toNumber?.() ??
                           Number(b.account.timestamp)) -
-                        (a.account.timestamp?.toNumber?.() ??
+                        (a.account?.timestamp?.toNumber?.() ??
                           Number(a.account.timestamp))
                     )
                     .slice(0, 4)
@@ -456,7 +486,20 @@ const DashBoardPage = () => {
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-medium">{uiSession.cost}</p>
+                            {/* <p className="font-medium">{uiSession.cost}</p> */}
+                            <p className="font-medium">
+                              {uiSession.cost}
+                              {uiSession.discounted && (
+                                <span className="ml-2 text-xs text-green-600">
+                                  (discounted)
+                                </span>
+                              )}
+                            </p>
+                            {uiSession.discounted && uiSession.originalCost && (
+                              <p className="text-xs text-muted-foreground line-through">
+                                {uiSession.originalCost}
+                              </p>
+                            )}
                             <p className="text-sm text-muted-foreground">
                               {uiSession.energy}
                             </p>

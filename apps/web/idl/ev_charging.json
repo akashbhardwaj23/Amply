@@ -220,6 +220,14 @@
         {
           "name": "timestamp",
           "type": "i64"
+        },
+        {
+          "name": "original_price",
+          "type": "u64"
+        },
+        {
+          "name": "use_token",
+          "type": "bool"
         }
       ]
     },
@@ -263,7 +271,7 @@
       ],
       "args": [
         {
-          "name": "amount",
+          "name": "_amount",
           "type": "u64"
         }
       ]
@@ -556,12 +564,20 @@
             "type": "u64"
           },
           {
+            "name": "original_price",
+            "type": "u64"
+          },
+          {
             "name": "minutes",
             "type": "u32"
           },
           {
             "name": "timestamp",
             "type": "i64"
+          },
+          {
+            "name": "used_token",
+            "type": "bool"
           }
         ]
       }

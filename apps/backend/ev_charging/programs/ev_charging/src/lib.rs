@@ -235,6 +235,8 @@ pub mod ev_charging {
         price_paid: u64,
         minutes: u32,
         timestamp: i64,
+        original_price: u64,
+        use_token: bool,
     ) -> Result<()> {
         let session = &mut ctx.accounts.session;
         session.user = ctx.accounts.authority.key();
@@ -242,6 +244,8 @@ pub mod ev_charging {
         session.charger_name = charger_name;
         session.power = power;
         session.price_paid = price_paid;
+        session.original_price = original_price;    
+        session.used_token = use_token; 
         session.minutes = minutes;
         session.timestamp = timestamp;
 
@@ -470,8 +474,10 @@ pub struct ChargingSession {
     pub charger_name: String,
     pub power: u64,
     pub price_paid: u64,
+    pub original_price: u64,
     pub minutes: u32,
     pub timestamp: i64,
+    pub used_token: bool,
 }
 
 impl ChargingSession {
