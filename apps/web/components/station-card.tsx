@@ -41,7 +41,7 @@ export function StationCard({ station, mapRef,handleTabChange, selected, onSelec
       map.flyTo({
         center: [longitude, latitude],
         zoom: 16,
-        speed: 2,
+        speed: 6,
       })
     }
   
@@ -52,21 +52,21 @@ export function StationCard({ station, mapRef,handleTabChange, selected, onSelec
   return (
     <Card className={`transition-all ${selected ? "border-rose-500 shadow-md" : "hover:shadow-sm"}`} onClick={onSelect}>
       <CardContent className="p-4">
-        <div className="flex justify-between">
+        <div className="flex justify-between gap-1 md:gap-0">
           <div>
             <div className="flex items-center mb-1">
               <h3 className="font-bold">{station.name}</h3>
               {station.available ? (
                 <Badge
                   variant="outline"
-                  className="ml-2 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
+                  className="ml-1 md:ml-2 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
                 >
                   Available
                 </Badge>
               ) : (
                 <Badge
                   variant="outline"
-                  className="ml-2 bg-gray-50 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400 border-gray-200 dark:border-gray-800"
+                  className="ml-1 md:ml-2 bg-gray-50 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400 border-gray-200 dark:border-gray-800"
                 >
                   In Use
                 </Badge>
@@ -76,7 +76,7 @@ export function StationCard({ station, mapRef,handleTabChange, selected, onSelec
               <MapPin className="mr-1 h-3 w-3" />
               {station.address}
             </p>
-            <div className="flex items-center space-x-4 text-sm">
+            <div className="flex items-center space-x-4 text-xs md:text-sm">
               <span className="flex items-center">
                 <Zap className="mr-1 h-4 w-4 text-amber-500" />
                 {station.power} kW

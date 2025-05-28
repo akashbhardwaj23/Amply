@@ -58,16 +58,6 @@ import { getPhantomProvider } from '@/utils/utils';
 import { toast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 
-// Not Needed
-// const getPhantomProvider = (): PhantomProvider | undefined => {
-//   if (typeof window !== 'undefined' && 'solana' in window) {
-//     const provider = (window as any).solana as PhantomProvider;
-//     if (provider.isPhantom) return provider;
-//   }
-//   window.open('https://phantom.app/', '_blank');
-//   return undefined;
-// };
-
 const mintAddress = new web3.PublicKey(
   'HYbi3JvAQNDawVmndhqaDQfBaZYzW8FxsAEpTae3mzrm'
 );
@@ -347,7 +337,7 @@ const DashBoardPage = () => {
                 </div>
 
                 <Dialog>
-                  <DialogTrigger className="border border-input bg-background text-sm hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3">
+                  <DialogTrigger className="border border-input bg-background text-[8px] md:text-sm hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3">
                     Edit Profile
                   </DialogTrigger>
                   <DialogContent>
@@ -633,7 +623,7 @@ const DashBoardPage = () => {
                     setIsCharging={setIsCharging}
                     useToken={useToken}
                     amountInLamports={amountInLamports.toNumber()}
-                    // fetchBalance={fetchBalance}
+                    fetchBalance={fetchBalance}
                   />
                 </div>
               ) : (

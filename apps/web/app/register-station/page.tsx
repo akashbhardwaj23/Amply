@@ -464,7 +464,7 @@ export default function RegisterStationPage() {
                   </CardDescription>
                 </CardHeader>
 
-                <div className="bg-muted rounded-lg overflow-hidden h-[600px] mb-4">
+                <div className="bg-muted rounded-lg overflow-hidden h-[400px] md:h-[600px] mb-4">
                   <div className="relative h-full w-full bg-gray-100 dark:bg-gray-800">
                     <Map
                       initialViewState={{
@@ -495,7 +495,7 @@ export default function RegisterStationPage() {
                   </div>
                 </div>
 
-                <div className="flex justify-between p-4">
+                <div className="flex flex-col md:flex-row justify-between gap-4 md:gap-0 p-4">
                   <Button
                     type="button"
                     variant="outline"
@@ -507,13 +507,13 @@ export default function RegisterStationPage() {
                   {viewPort && (
                     <div className="flex justify-between items-center gap-4 text-sm">
                       <div className="flex flex-col justify-center items-center gap-2">
-                        <span className="px-4 py-2 bg-primary rounded-lg">
+                        <span className="px-4 py-2 bg-primary rounded-sm">
                           {viewPort.longitude}
                         </span>
                         <Label>Logitude</Label>
                       </div>
                       <div className="flex flex-col justify-center items-center gap-2">
-                        <span className="px-4 py-2 bg-primary rounded-lg">
+                        <span className="px-4 py-2 bg-primary rounded-sm">
                           {viewPort.latitude}
                         </span>
 

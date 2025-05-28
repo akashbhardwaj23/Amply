@@ -172,15 +172,15 @@ function StationCard({ charger }: { charger: ChargerType }) {
   return (
     <Card>
       <CardContent>
-        <div className="flex flex-col p-4 gap-4">
+        <div className="flex flex-col px-2 py-4 md:p-4 gap-4">
           <div className="flex justify-start items-center gap-4 md:gap-2 w-full">
-            <h1 className="text-3xl">{charger.account.name}</h1>
+            <h1 className="text-xl md:text-3xl">{charger.account.name}</h1>
             <span className="px-2 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
               Availabe
             </span>
           </div>
-          <div className="flex justify-between items-center w-full text-sm text-muted-foreground">
-            <div className="flex items-center">
+          <div className="flex justify-between items-center w-full text-xs md:text-sm text-muted-foreground">
+            <div className="flex items-center text-nowrap">
               {" "}
               <MapPin className="mr-1 h-4 w-4" />
               {charger.account.address}
@@ -190,7 +190,7 @@ function StationCard({ charger }: { charger: ChargerType }) {
               <span>•</span>0.3 miles away
             </div>
           </div>
-          <div className="flex justify-between items-center space-x-6 md:space-x-4 text-lg">
+          <div className="flex justify-between items-center text-sm space-x-6 md:space-x-4 md:text-lg">
             <span className="flex items-center">
               <Zap className="mr-1 h-4 w-4 text-amber-500" />
               {charger.account.power.length} kW
@@ -213,11 +213,11 @@ function StationCard({ charger }: { charger: ChargerType }) {
           <div className="flex justify-between">
             <div>
               <p className="text-xs text-muted-foreground">Connector Types</p>
-              <p className="font-medium">{charger.account.chargerType}</p>
+              <p className="text-sm md:text-base font-medium">{charger.account.chargerType}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Availability</p>
-              <p className="font-medium">
+              <p className="text-sm md:text-base font-medium">
                 {/* //@ts-ignore */}
                 {charger.account.availability! || "Available"}
               </p>

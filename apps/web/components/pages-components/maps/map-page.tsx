@@ -77,7 +77,7 @@ export default function MapPage() {
     // console.log('programId:', programId.toString());
 
     async function fetchStations() {
-      const phantom = getPhantomProvider() as PhantomProvider;
+      const phantom = getPhantomProvider();
       if (!phantom) {
         toast({
           variant : "default",
@@ -310,15 +310,15 @@ export default function MapPage() {
               </div>
 
               <div className="flex items-center text-xs space-x-2">
-                <div className="flex flex-col items-center justify-center space-x-2">
+                <div className="flex flex-col items-center justify-center space-y-1">
                     <MapPin className="text-red-600" />
                     <span>Selected Map Pin</span>
                 </div>
-                 <div className="flex flex-col items-center justify-center space-x-2">
+                 <div className="flex flex-col items-center justify-center space-y-1">
                     <MapPin className="text-gray-800" />
                     <span>Map Charger Position</span>
                 </div>
-                 <div className="flex flex-col items-center justify-center space-x-2">
+                 <div className="flex flex-col items-center justify-center space-y-1">
                     <MapPin className="text-emerald-700 dark:text-emerald-400" />
                     <span>Searched Map Pin</span>
                 </div>
@@ -334,7 +334,7 @@ export default function MapPage() {
             className="w-full"
             onValueChange={(v: any) => setView(v as "list" | "map")}
           >
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center mb-4 gap-2 md:gap-0">
               <TabsList>
                 <TabsTrigger value="map" ref={mapTabRef}>
                   Map View
@@ -343,7 +343,7 @@ export default function MapPage() {
                   List View
                 </TabsTrigger>
               </TabsList>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-xs md:text-sm text-muted-foreground">
                 {filteredStations.length} stations found
               </div>
             </div>

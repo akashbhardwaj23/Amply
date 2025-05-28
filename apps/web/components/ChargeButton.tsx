@@ -110,7 +110,7 @@ export function ChargeButton({
   onSessionRecorded: any;
   useToken: boolean;
   amountInLamports: number;
-  fetchBalance: Promise<void>;
+  fetchBalance: ()  => Promise<void>;
 }) {
   const [progress, setProgress] = useState(0);
   const [phantom, setPhantom] = useState<PhantomProvider | undefined>();
