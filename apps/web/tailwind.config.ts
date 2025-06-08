@@ -130,6 +130,30 @@ const config = {
   					height: 'var(--radix-accordion-content-height)'
   				}
   			},
+			'waves': {
+				'0%' : {
+					backgroundPosition : "0% 50%"
+				},
+				'50%' : {
+					backgroundPosition : '100% 50%'
+				},
+				'100%' : {
+					backgroundPosition : '0% 50%'
+				}
+			},
+			'gradient-pluse' : {
+				'0%, 100%' :{
+					backgroundSize : '50px 50px',
+					backgroundImage : `radial-gradient(ellipse at top left, hsl(var(--primary)) 0%, transparent 10%),
+      radial-gradient(ellipse at top right, hsl(var(--primary)) 0%, transparent 10%);`
+				},
+				'50%' : {
+						backgroundSize: '70px 70px',
+						backgroundImage:`radial-gradient(ellipse at top left, hsl(var(--primary-foreground)) 0%, transparent 15%), /* Brighter primary, slightly larger fade */
+						  radial-gradient(ellipse at top right, hsl(var(--primary-foreground)) 0%, transparent 15%);`
+						  
+						  }
+			},
   			'accordion-up': {
   				from: {
   					height: 'var(--radix-accordion-content-height)'
@@ -141,7 +165,9 @@ const config = {
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+			'wave' : 'wave 0.3s ease-out',
+			'gradient-pluse' : 'gradient-pluse 0.3s ease-out'
   		}
   	}
   },

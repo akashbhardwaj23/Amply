@@ -34,6 +34,9 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    --my-gradient:
+      linear-gradient(0deg, #fff 10px, transparent 10px),
+      linear-gradient(90deg, #fff 10px, transparent 10px);
   }
 
   .dark {
@@ -67,12 +70,27 @@
   }
 }
 
+
 @layer base {
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
   }
 }
+/* 
+.image::before {
+  content: '';
+  position: absolute;
+  top: 0%;
+  left: 0%;
+  right: 0%;
+  bottom: 0%;
+  background-color: var(--primary);
+  filter: blur(20px);
+  f
+} */

@@ -9,13 +9,14 @@ import { useEffect, useState } from "react";
 import { ChargerType } from "@/types";
 import { fetchChargerData } from "./server/charger";
 import { Loader } from "@/components/ui/loader";
-import { useRouter } from "next/navigation";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { useUser } from "@civic/auth-web3/react";
 
 export default function Home() {
   const [cData, setCData] = useState<ChargerType[]>();
   const [selectedCharger, setSelectedCharger] = useState<ChargerType>();
   const [loading, setLoading] = useState(false);
+  const {user, isLoading} = useUser();
 
   const getCharger = async () => {
     setLoading(true);
@@ -24,11 +25,13 @@ export default function Home() {
     setLoading(false);
   };
   useEffect(() => {
-    getCharger();
-  }, []);
+    if(!isLoading && user){
+      getCharger();
+    }
+  }, [isLoading]);
 
   //FIX THIS
-  if (!cData || loading) {
+  if (!cData || loading || isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Loader />
