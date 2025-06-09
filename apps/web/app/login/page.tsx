@@ -45,7 +45,7 @@ export default function SignIn() {
         <Card className="border-2 shadow-lg p-10 bg-[radial-gradient(ellipse_at_bottom_left,_#e11d4b_0%,_transparent_5%),radial-gradient(ellipse_at_bottom_right,_#e11d4b_0%,_transparent_5%)] bg-no-repeat bg-size-[50px_50px] animate-gradient-pluse from-primary">
           <div className="flex flex-col md:grid md:grid-cols-4">
             <CardContent className="col-span-2">
-             <Image src={'/logo.jpg'} alt="logo" width={500} height={500} className="w-30 h-30 md:w-60 md:h-60 image relative object-cover rounded-[12px] bg-[radial-gradient(center at 100%,_#e11d4b_100%)] shadow-[#e11d4b_0px_4px_24px_0px]" />
+             <Image src={'/logo.jpg'} alt="logo" width={500} height={500} loading="lazy" className="w-30 h-30 md:w-60 md:h-60 image relative object-cover rounded-[12px] bg-[radial-gradient(center at 100%,_#e11d4b_100%)] shadow-[#e11d4b_0px_4px_24px_0px]" />
             </CardContent>
             <div className="col-span-2">
               <CardHeader className="space-y-1 text-center">

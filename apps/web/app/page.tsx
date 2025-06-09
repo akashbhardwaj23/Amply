@@ -25,6 +25,7 @@ export default function Home() {
     setLoading(false);
   };
   useEffect(() => {
+    console.log("user ", user)
     if(!isLoading && user){
       getCharger();
     }
