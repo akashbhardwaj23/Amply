@@ -1,4 +1,4 @@
-import { fetchChargerData } from "@/app/server/charger"
+import { fetchChargerData } from "@/app/(home)/server/charger"
 import { NextResponse } from "next/server"
 import { GoogleGenAI } from "@google/genai";
 

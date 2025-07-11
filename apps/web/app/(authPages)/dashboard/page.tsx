@@ -25,7 +25,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { useUser } from '@civic/auth-web3/react';
-import { fetchChargerData } from '@/app/server/charger';
+import { fetchChargerData } from '@/server/charger';
 import { Loader } from '@/components/ui/loader';
 import { ChargerType, PhantomProvider, ProgramType } from '@/types';
 import SelectChargeButton from '@/components/select-charger';

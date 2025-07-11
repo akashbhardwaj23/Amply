@@ -1,6 +1,7 @@
 "use client"
-import { MapContext } from "@/app/context/MapContext";
+import { MapContext } from "@/context/MapContext";
 import { useContext } from "react";
+
 
 
 export function useAMap(){

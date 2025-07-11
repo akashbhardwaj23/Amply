@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Mic, MicOff, Loader2 } from "lucide-react";
-import { fetchChargerData } from "@/app/server/charger";
 import { ChargerType } from "@/types";
 
 interface VoiceCommandDialogProps {

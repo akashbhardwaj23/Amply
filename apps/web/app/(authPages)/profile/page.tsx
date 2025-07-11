@@ -13,10 +13,8 @@ import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import {
-  AlertCircle,
   BadgeCheck,
   Car,
-  Check,
   CreditCard,
   Edit,
   Eye,
@@ -24,8 +22,6 @@ import {
   Key,
   Lock,
   Mail,
-  Phone,
-  Shield,
   User,
   Wallet,
 } from "lucide-react"
@@ -33,7 +29,6 @@ import { useUser } from "@civic/auth-web3/react"
 import { Loader } from "@/components/ui/loader"
 import { useWallet } from "@solana/wallet-adapter-react"
 
-// Mock user data
 const userData = {
   name: "Alex Johnson",
   email: "alex.johnson@example.com",

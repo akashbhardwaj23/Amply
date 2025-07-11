@@ -7,7 +7,7 @@ import { FeatureCard } from "@/components/feature-card";
 import { Card, CardContent } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { ChargerType } from "@/types";
-import { fetchChargerData } from "./server/charger";
+import { fetchChargerData } from "../server/charger";
 import { Loader } from "@/components/ui/loader";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { useUser } from "@civic/auth-web3/react";

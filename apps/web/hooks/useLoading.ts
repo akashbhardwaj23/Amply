@@ -1,6 +1,5 @@
-import { LoadingContext } from "@/app/context/LoadingContext";
+import { LoadingContext } from "@/context/LoadingContext";
 import { useContext } from "react";
-
 
 
 export function useLoading(){

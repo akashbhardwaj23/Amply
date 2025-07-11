@@ -31,7 +31,7 @@ import { AvatarImage } from "@radix-ui/react-avatar";
 import { Loader } from "./ui/loader";
 import { useLoading } from "@/hooks/useLoading";
 import { ChargerType } from "@/types";
-import { fetchChargerData } from "@/app/server/charger";
+import { fetchChargerData } from "@/server/charger";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -203,7 +203,7 @@ export default function Navbar() {
                 <DropdownMenuItem onClick={() => router.push("/dashboard")}>
                   Dashboard
                 </DropdownMenuItem>
-                <DropdownMenuItem>Settings</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/setting')}>Settings</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
                   Sign out

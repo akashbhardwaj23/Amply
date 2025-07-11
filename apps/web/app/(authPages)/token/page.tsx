@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,10 +8,7 @@ import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Award, Calendar, CreditCard, Gift, History, Share2, ShieldCheck, Sparkles, Zap } from "lucide-react"
-import { useConnection, useWallet } from "@solana/wallet-adapter-react"
-import { redirect } from "next/navigation"
 import { Loader } from "@/components/ui/loader"
-import { PublicKey } from "@solana/web3.js"
 import { useBalance } from "@/hooks/usebalance"
 
 // Mock user data
