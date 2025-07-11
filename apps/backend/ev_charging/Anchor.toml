@@ -1,0 +1,19 @@
+[toolchain]
+package_manager = "yarn"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.devnet]
+ev_charging = "YehhGH97KftZVcMQX1TB17guVGVUwTYK4PZmoHTfSpv"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "https://api.devnet.solana.com"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "mocha --require ts-node/register --timeout 1000000 --recursive tests/**/*.ts"
