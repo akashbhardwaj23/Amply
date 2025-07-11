@@ -254,9 +254,9 @@ export default function MapPage() {
               </form>
 
               {cities && (
-                <div className="absolute top-12 z-50 rounded-b-xl max-w-64 bg-black">
+                <div className="absolute top-12 z-50 rounded-b-xl max-w-64 text-foreground bg-background shadow-lg">
                   {cities.map((mycity, index) => (
-                    <motion.div key={index} layoutId="cityname" className="border-b p-4 flex flex-col" onClick={() =>
+                    <motion.div key={index} layoutId="cityname" className="border-b p-4 flex flex-col cursor-pointer" onClick={() =>
                         handleMapMove(Number(mycity.lon), Number(mycity.lat))} >
                       <span>{mycity.display_name}</span>
                       <span>Long : {mycity.lon}</span>

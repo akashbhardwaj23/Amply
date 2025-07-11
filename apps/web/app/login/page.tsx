@@ -1,3 +1,4 @@
+'use client';
 import {
   Card,
   CardContent,
@@ -5,12 +6,13 @@ import {
   CardTitle,
   CardHeader,
 } from "@/components/ui/card";
-import { SignInButton } from "@civic/auth-web3/react";
+import { SignInButton, useUser } from "@civic/auth-web3/react";
 import { getUser } from "@civic/auth-web3/nextjs";
 import { redirect } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import { Suspense } from "react";
 import Image from "next/image";
+import { Loader } from "@/components/ui/loader";
 
 export default function SignIn() {
   return (
@@ -23,11 +25,19 @@ export default function SignIn() {
     </div>
   );
 
-  async function SignInComponent() {
-    const user = await getUser();
+function SignInComponent() {
+    const {user, isLoading} = useUser();
 
     if (user) {
       redirect("/");
+    }
+
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center h-screen">
+          <Loader />
+        </div>
+      );
     }
 
     return (
@@ -45,7 +55,7 @@ export default function SignIn() {
         <Card className="border-2 shadow-lg p-10 bg-[radial-gradient(ellipse_at_bottom_left,_#e11d4b_0%,_transparent_5%),radial-gradient(ellipse_at_bottom_right,_#e11d4b_0%,_transparent_5%)] bg-no-repeat bg-size-[50px_50px] animate-gradient-pluse from-primary">
           <div className="flex flex-col md:grid md:grid-cols-4">
             <CardContent className="col-span-2">
-             <Image src={'/logo.jpg'} alt="logo" width={500} height={500} loading="lazy" className="w-30 h-30 md:w-60 md:h-60 image relative object-cover rounded-[12px] bg-[radial-gradient(center at 100%,_#e11d4b_100%)] shadow-[#e11d4b_0px_4px_24px_0px]" />
+             <Image src={'/logo.jpg'} alt="logo" width={500} height={500} loading="lazy" className="w-20 h-20 md:w-60 md:h-60 image relative object-cover rounded-[12px] bg-[radial-gradient(center at 100%,_#e11d4b_100%)] shadow-[#e11d4b_0px_4px_24px_0px]" />
             </CardContent>
             <div className="col-span-2">
               <CardHeader className="space-y-1 text-center">
