@@ -199,6 +199,12 @@ export default function MapPage() {
     setFilteredStations(filtered);
   }, [stations, priceRange, powerRange, availableOnly]);
 
+
+  const handleCitySelect = (mycity : NomanatomData) => {
+      handleMapMove(Number(mycity.lon), Number(mycity.lat))
+      setSearchLocation("")
+  }
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     // For demo, we'll just reset filters
@@ -256,8 +262,7 @@ export default function MapPage() {
               {cities && (
                 <div className="absolute top-12 z-50 rounded-b-xl max-w-64 text-foreground bg-background shadow-lg">
                   {cities.map((mycity, index) => (
-                    <motion.div key={index} layoutId="cityname" className="border-b p-4 flex flex-col cursor-pointer" onClick={() =>
-                        handleMapMove(Number(mycity.lon), Number(mycity.lat))} >
+                    <motion.div key={index} layoutId="cityname" className="border-b p-4 flex flex-col cursor-pointer" onClick={() => handleCitySelect(mycity)}>
                       <span>{mycity.display_name}</span>
                       <span>Long : {mycity.lon}</span>
                       <span>Lat : {mycity.lat}</span>
