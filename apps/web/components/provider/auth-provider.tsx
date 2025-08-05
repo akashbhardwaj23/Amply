@@ -22,6 +22,8 @@ export default function AuthProvider({
         []
       );
 
+  
+
   return (
     <ConnectionProvider endpoint="https://api.devnet.solana.com">
       <WalletProvider wallets={[]} autoConnect>

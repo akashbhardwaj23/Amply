@@ -34,7 +34,7 @@ export default function Home() {
   //FIX THIS
   if (!cData || loading || isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div className="flex justify-center items-center mt-40">
         <Loader />
       </div>
     );
